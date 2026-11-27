@@ -20,10 +20,9 @@ export const welcomeStep: WizardStep = {
     if (project.kind === 'nextjs') {
       context.say(`Detected a Next.js app (App Router in ${project.appDir}/) using ${project.packageManager}.`);
     } else {
-      // The standalone path (a separate luzIA server plus a <script> snippet) is not available yet.
-      throw new Error(
-        'No Next.js App Router app found here (a "next" dependency and an app/ or src/app/ folder). ' +
-          'Run luzia init in your Next.js portfolio project.',
+      context.say(
+        'No Next.js app found here (a "next" dependency and an app/ or src/app/ folder), so luzIA sets up a ' +
+          `standalone server in this folder using ${project.packageManager}, plus a <script> snippet for your portfolio’s HTML.`,
       );
     }
   },

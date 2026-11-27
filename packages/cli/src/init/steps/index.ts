@@ -5,6 +5,7 @@ import { instructionsStep } from './instructions.ts';
 import { modelsStep } from './models.ts';
 import { nextjsStep } from './nextjs.ts';
 import { productionStep } from './production.ts';
+import { standaloneStep } from './standalone.ts';
 import { welcomeStep } from './welcome.ts';
 import { widgetStep } from './widget.ts';
 
@@ -21,6 +22,7 @@ export const wizardSteps: WizardStep[] = [
   instructionsStep,
   widgetStep,
   nextjsStep,
+  standaloneStep,
   buildStep,
   productionStep,
 ];

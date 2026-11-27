@@ -1,6 +1,6 @@
 import path from 'node:path';
 import type { FileWrite, PlannedCommand, WizardContext } from '../context.ts';
-import { gitignoreIgnores } from '../env-file.ts';
+import { gitignoreWith, type IgnoreEntry } from '../gitignore.ts';
 import { layoutWithWidget, LUZIA_BUILD, packageJsonWithLuziaBuild } from '../nextjs-layout.ts';
 import { addPackagesCommand } from '../project.ts';
 import type { WizardStep } from '../step.ts';
@@ -20,7 +20,7 @@ export const nextjsStep: WizardStep = {
   applies: (context) => context.state.project.kind === 'nextjs',
   async run(context) {
     context.state.endpoint = NEXTJS_ENDPOINT;
-    const files: FileWrite[] = [routeFile(context), ...(await artifactIgnore(context))];
+    const files: FileWrite[] = [routeFile(context), ...(await gitignoreWith(context, [ARTIFACT_IGNORE]))];
     const commands = installCommands(context);
 
     context.say(`The server route answers the widget at ${NEXTJS_ENDPOINT}, using the models in .env.local.`);
@@ -32,13 +32,10 @@ export const nextjsStep: WizardStep = {
 };
 
 /** The compiled Knowledge Base is rebuilt by `luzia build`, so it is kept out of git. */
-async function artifactIgnore(context: WizardContext): Promise<FileWrite[]> {
-  const artifactDir = ARTIFACT_PATH.split('/')[0]!;
-  const gitignore = await context.readFile('.gitignore');
-  if (gitignore !== null && gitignoreIgnores(gitignore, artifactDir)) return [];
-  const before = gitignore ? `${gitignore.replace(/\n?$/, '\n')}\n` : '';
-  return [{ path: '.gitignore', content: `${before}# Compiled Knowledge Base (rebuilt by luzia build)\n${artifactDir}/\n` }];
-}
+export const ARTIFACT_IGNORE: IgnoreEntry = {
+  entry: `${ARTIFACT_PATH.split('/')[0]!}/`,
+  comment: 'Compiled Knowledge Base (rebuilt by luzia build)',
+};
 
 const LAYOUT_FILES = ['layout.tsx', 'layout.jsx', 'layout.js', 'layout.ts'];
 
