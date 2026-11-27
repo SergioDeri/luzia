@@ -55,7 +55,8 @@ const TEMPLATE = `
     </header>
     <div class="body">
       <p class="greeting" hidden></p>
-      <ol class="messages" role="log" aria-live="polite"></ol>
+      <ol class="messages" role="log" aria-live="off"></ol>
+      <p class="announcer" role="status"></p>
       <ul class="suggestions" aria-label="Suggested questions" hidden></ul>
     </div>
     <p class="alert" role="alert" hidden></p>
@@ -175,6 +176,7 @@ class View {
   readonly #body: HTMLElement;
   readonly #greeting: HTMLElement;
   readonly #messages: HTMLOListElement;
+  readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
   readonly #alert: HTMLElement;
   readonly #form: HTMLFormElement;
@@ -184,6 +186,7 @@ class View {
   readonly #contact: () => string;
   #lastSent = '';
   #mode: LuziaWidgetMode = 'bubble';
+  #wasStreaming = false;
 
   constructor(root: ShadowRoot, conversation: Conversation, contact: () => string) {
     this.#conversation = conversation;
@@ -194,14 +197,21 @@ class View {
     this.#body = root.querySelector('.body')!;
     this.#greeting = root.querySelector('.greeting')!;
     this.#messages = root.querySelector('.messages')!;
+    this.#announcer = root.querySelector('.announcer')!;
     this.#suggestions = root.querySelector('.suggestions')!;
     this.#alert = root.querySelector('.alert')!;
     this.#form = root.querySelector('.composer')!;
     this.#input = this.#form.querySelector('textarea')!;
     this.#send = this.#form.querySelector('button')!;
 
-    this.#bubble.addEventListener('click', () => this.#setOpen(this.#bubble.getAttribute('aria-expanded') !== 'true'));
-    this.#close.addEventListener('click', () => this.#setOpen(false));
+    this.#bubble.addEventListener('click', () => this.#toggle(this.#bubble.getAttribute('aria-expanded') !== 'true'));
+    this.#close.addEventListener('click', () => this.#toggle(false));
+    this.#panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.#mode === 'bubble' && !event.isComposing) {
+        event.preventDefault();
+        this.#toggle(false);
+      }
+    });
     root.querySelector('.new-conversation')!.addEventListener('click', () => {
       conversation.reset();
       this.#input.focus();
@@ -233,7 +243,10 @@ class View {
         button.type = 'button';
         button.className = 'suggestion';
         button.textContent = question;
-        button.addEventListener('click', () => this.#conversation.send(question));
+        // The list hides once the conversation starts, so focus moves on to the message box.
+        button.addEventListener('click', () => {
+          if (this.#conversation.send(question)) this.#input.focus();
+        });
         const item = document.createElement('li');
         item.append(button);
         return item;
@@ -254,17 +267,41 @@ class View {
     this.#setOpen(inline);
   }
 
+  /**
+   * The Visitor opens or closes the bubble's chat. Focus follows: into the
+   * message box on open, back to the bubble on close.
+   */
+  #toggle(open: boolean): void {
+    this.#setOpen(open);
+    (open ? this.#input : this.#bubble).focus();
+  }
+
   #setOpen(open: boolean): void {
     this.#panel.hidden = !open;
     this.#bubble.setAttribute('aria-expanded', String(open));
   }
 
+  /** Sends what the Visitor typed; focus stays in (or returns to) the message box, since Send disables while streaming. */
   #submit(): void {
     const text = this.#input.value;
-    if (this.#conversation.send(text)) {
-      this.#lastSent = text;
-      this.#input.value = '';
-    }
+    if (!this.#conversation.send(text)) return;
+    this.#lastSent = text;
+    this.#input.value = '';
+    this.#input.focus();
+  }
+
+  /**
+   * The transcript is a log that is not live itself: announcing it would read
+   * every streamed token. Instead the status region reads each reply once,
+   * when it has finished streaming. Errors are announced by the alert.
+   */
+  #announce(state: ConversationState, streaming: boolean): void {
+    const finished = this.#wasStreaming && !streaming;
+    this.#wasStreaming = streaming;
+    if (streaming || state.messages.length === 0) this.#announcer.textContent = '';
+    if (!finished) return;
+    const last = state.messages.at(-1);
+    this.#announcer.textContent = state.status === 'idle' && last?.role === 'assistant' ? last.content : '';
   }
 
   #render(state: ConversationState): void {
@@ -288,6 +325,7 @@ class View {
 
     const streaming = state.status === 'streaming';
     this.#messages.setAttribute('aria-busy', String(streaming));
+    this.#announce(state, streaming);
 
     // Error, limit and too-long states (see ./alert.ts).
     const failure = state.status === 'error' && state.error ? failureKind(state.error) : null;

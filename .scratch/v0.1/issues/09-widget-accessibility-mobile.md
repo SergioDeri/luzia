@@ -4,10 +4,10 @@
 
 **Blocked by:** 08 — Widget customization and inline mode
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Opening the chat moves focus into it; closing returns focus to the bubble; Escape closes the bubble panel
-- [ ] Streamed replies are exposed through an ARIA live region
-- [ ] All controls (send, suggested questions, new conversation, close) are keyboard operable with visible focus and accessible names
-- [ ] Layout is usable on small screens in bubble and inline modes
-- [ ] Seam 2 tests cover focus management, ARIA roles/labels and keyboard operation
+- [x] Opening the chat moves focus into it; closing returns focus to the bubble; Escape closes the bubble panel
+- [x] Streamed replies are exposed through an ARIA live region
+- [x] All controls (send, suggested questions, new conversation, close) are keyboard operable with visible focus and accessible names
+- [x] Layout is usable on small screens in bubble and inline modes
+- [x] Seam 2 tests cover focus management, ARIA roles/labels and keyboard operation
