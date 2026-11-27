@@ -28,9 +28,62 @@ export function visitor(host: Element) {
     return box;
   };
 
+  /** The accessible name of a control, as a screen reader would announce it. */
+  const nameOf = (el: Element): string =>
+    el.getAttribute('aria-label') ?? el.textContent?.trim() ?? '';
+
+  const isOnScreen = (el: Element): boolean => {
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      if ((node as HTMLElement).hidden || getComputedStyle(node).display === 'none') return false;
+    }
+    return true;
+  };
+
   return {
     host,
     button,
+    /** The accessible name of the control that has keyboard focus inside the widget, or `null`. */
+    focused: (): string | null => {
+      if (document.activeElement !== host) return null;
+      const active = root().activeElement;
+      return active ? nameOf(active) : null;
+    },
+    /** Moves keyboard focus to the control with this accessible name, as Tab would. */
+    focus: (name: string) => {
+      const match = [...root().querySelectorAll<HTMLElement>('button, textarea')].find((el) => nameOf(el) === name);
+      if (!match) throw new Error(`No control named "${name}".`);
+      match.focus();
+    },
+    /** Presses a key on whatever has focus, as the browser would dispatch it. */
+    press: async (key: string) => {
+      const target = root().activeElement ?? host;
+      target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
+      await settle();
+    },
+    /**
+     * The controls a keyboard user reaches with Tab, in order, by accessible
+     * name. Only native buttons and text boxes count: those are what the
+     * browser makes focusable and operable with Enter/Space.
+     */
+    tabOrder: (): string[] =>
+      [...root().querySelectorAll<HTMLElement>('button, textarea, [tabindex]')]
+        .filter((el) => isOnScreen(el) && !(el as HTMLButtonElement).disabled && el.tabIndex >= 0)
+        .map(nameOf),
+    /**
+     * What polite live regions would announce right now: their text, skipping
+     * regions marked busy (screen readers wait until they settle). The
+     * `role="alert"` area is assertive and read through {@link alert}.
+     */
+    announcement: (): string =>
+      [...root().querySelectorAll<HTMLElement>('[aria-live], [role="status"], [role="log"]')]
+        .filter((el) => {
+          const live = el.getAttribute('aria-live');
+          if (live === 'off' || live === 'assertive' || el.getAttribute('role') === 'alert') return false;
+          return el.getAttribute('aria-busy') !== 'true';
+        })
+        .map((el) => el.textContent?.trim() ?? '')
+        .join(' ')
+        .trim(),
     /** Whether a button with this name is on screen. */
     hasButton: (name: string) => {
       const match = [...root().querySelectorAll('button')].find(
@@ -73,6 +126,23 @@ export function visitor(host: Element) {
     greeting: () => {
       const greeting = chat()?.querySelector<HTMLElement>('.greeting');
       return greeting && !greeting.hidden ? (greeting.textContent?.trim() ?? '') : null;
+    },
+    /**
+     * The chat panel's box as the stylesheet lays it out for the current
+     * viewport. The DOM test environment resolves media queries and viewport
+     * units but does no real layout, so this is the computed style, not a
+     * measured rectangle.
+     */
+    chatBox: () => {
+      const panel = chat();
+      if (!panel) throw new Error('No chat panel.');
+      const { position, top, left, width, height } = getComputedStyle(panel);
+      return { position, top, left, width, height };
+    },
+    /** The smallest size the stylesheet guarantees a control, in CSS pixels (0 when unset). */
+    tapTarget: (name: string) => {
+      const { minWidth, minHeight } = getComputedStyle(button(name));
+      return { width: parseFloat(minWidth) || 0, height: parseFloat(minHeight) || 0 };
     },
     /** The chat's background and text colours, as computed. */
     chatColors: () => {

@@ -9,6 +9,10 @@
  * - `--luzia-border`: input and inline-panel borders
  * - `--luzia-font`: font family
  * - `--luzia-inline-height`: height of the chat in inline mode
+ *
+ * Every control is at least 44px square (a comfortable tap target) and shows
+ * a focus ring for keyboard users. Below 480px wide the bubble's chat fills
+ * the screen; the inline chat stays in the page at full width.
  */
 export const styles = `
   :host {
@@ -42,6 +46,26 @@ export const styles = `
     }
   }
   [hidden] { display: none !important; }
+  button { min-width: 44px; min-height: 44px; }
+  button:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--luzia-accent);
+    outline-offset: 2px;
+  }
+  /* The header is accent-coloured, so its focus ring takes the text colour. */
+  .header button:focus-visible { outline-color: currentColor; outline-offset: -4px; }
+  /* Read by screen readers only: each finished reply (see the element's View). */
+  .announcer {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .bubble {
     display: grid;
     place-items: center;
@@ -73,6 +97,7 @@ export const styles = `
     z-index: auto;
   }
   :host([mode='inline']) .panel {
+    position: static;
     width: 100%;
     height: var(--luzia-inline-height);
     margin: 0;
@@ -83,7 +108,7 @@ export const styles = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.75rem 1rem;
+    padding: 0.25rem 0.5rem 0.25rem 1rem;
     background: var(--luzia-accent);
     color: var(--luzia-accent-contrast);
   }
@@ -202,4 +227,23 @@ export const styles = `
     cursor: pointer;
   }
   .composer button:disabled { opacity: 0.5; cursor: default; }
+  @media (max-width: 480px) {
+    .panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      border-radius: 0;
+    }
+    @supports (height: 100dvh) {
+      .panel { height: 100dvh; }
+    }
+    /* Inline, the chat stays in the page but never taller than the screen. */
+    :host([mode='inline']) .panel { height: min(var(--luzia-inline-height), 85vh); }
+    .composer { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+    /* Below 16px, mobile browsers zoom the page when the text box gets focus. */
+    .composer textarea { font-size: 16px; }
+  }
 `;
