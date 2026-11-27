@@ -1,0 +1,38 @@
+{
+  "name": "@luzia/core",
+  "version": "0.0.0",
+  "description": "luzIA server handler and Knowledge Base compiler",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.typecheck.json"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.109",
+    "@ai-sdk/google": "^4.0.127",
+    "@ai-sdk/openai": "^4.0.124",
+    "@ai-sdk/provider": "^4.0.39",
+    "ai": "^7.0.182",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2"
+  }
+}

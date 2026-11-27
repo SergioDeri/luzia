@@ -4,13 +4,13 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] pnpm workspace with `core`, `cli`, `widget` and `react` packages under the `@luzia` scope, MIT license, and a Next.js example app
-- [ ] `luzia build` compiles a Knowledge Base folder containing a Core file and optional Instructions file into a single artifact; it is also callable programmatically
-- [ ] The build fails with a clear message when the Core file is missing
-- [ ] The handler is created from a config object (compiled Knowledge Base, chat model) and turns a Web `Request` carrying conversation messages into a streamed `Response`
-- [ ] Core and Instructions reach the model on every request (verified via the fake model in a Seam 1 test)
-- [ ] Chat provider and model are chosen via configuration; API keys are read server-side only, and a missing key produces a clear startup error
-- [ ] The Next.js example mounts the handler on a route and answers a request from the example's Knowledge Base
-- [ ] Seam 1 tests run with no API keys or network
+- [x] pnpm workspace with `core`, `cli`, `widget` and `react` packages under the `@luzia` scope, MIT license, and a Next.js example app
+- [x] `luzia build` compiles a Knowledge Base folder containing a Core file and optional Instructions file into a single artifact; it is also callable programmatically
+- [x] The build fails with a clear message when the Core file is missing
+- [x] The handler is created from a config object (compiled Knowledge Base, chat model) and turns a Web `Request` carrying conversation messages into a streamed `Response`
+- [x] Core and Instructions reach the model on every request (verified via the fake model in a Seam 1 test)
+- [x] Chat provider and model are chosen via configuration; API keys are read server-side only, and a missing key produces a clear startup error
+- [x] The Next.js example mounts the handler on a route and answers a request from the example's Knowledge Base
+- [x] Seam 1 tests run with no API keys or network
