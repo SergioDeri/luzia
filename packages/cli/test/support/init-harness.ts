@@ -590,7 +590,50 @@ export async function existingSetupProject(files: Record<string, string | Uint8A
   return cwd;
 }
 
-export type MenuChoice = 'models' | 'core' | 'instructions' | 'widget' | 'production' | 'done';
+const EXISTING_STANDALONE_FUNCTION = `import { readFileSync } from 'node:fs';
+import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+
+const compiledKnowledgeBase = JSON.parse(
+  readFileSync(new URL('../.luzia/knowledge-base.json', import.meta.url), 'utf8'),
+);
+
+const handler = createLuziaHandler({
+  knowledgeBase: loadCompiledKnowledgeBase(compiledKnowledgeBase),
+  // Your portfolio's origins (scheme + host, no path): only they may call this server.
+  allowedOrigins: ['https://jamie.example.com', 'https://www.jamie.example.com'],
+});
+
+export const POST = handler;
+export const OPTIONS = handler;
+`;
+
+/** The Knowledge Base and `.env.local` of {@link EXISTING_SETUP}, without the Next.js integration. */
+const EXISTING_CONTENT: Record<string, string> = Object.fromEntries(
+  Object.entries(EXISTING_SETUP).filter(([file]) => !file.startsWith('app/')),
+);
+
+/**
+ * A standalone folder where `luzia init` already ran: the Knowledge Base,
+ * `.env.local` and the server in `api/luzia.ts` (allowing
+ * `https://jamie.example.com` and `https://www.jamie.example.com`), plus extra
+ * or replaced `files`. `server: false` leaves the server out (a partial setup).
+ */
+export async function existingStandaloneProject(
+  files: Record<string, string> = {},
+  options: { server?: boolean } = {},
+): Promise<string> {
+  const server: Record<string, string> =
+    options.server === false
+      ? {}
+      : {
+          'package.json': `${JSON.stringify({ name: 'luzia-jamie', private: true, type: 'module', scripts: { build: 'luzia build' } }, null, 2)}\n`,
+          'api/luzia.ts': EXISTING_STANDALONE_FUNCTION,
+          'vercel.json': `${JSON.stringify({ functions: { 'api/luzia.ts': { includeFiles: '.luzia/**' } } }, null, 2)}\n`,
+        };
+  return emptyProject({ ...EXISTING_CONTENT, ...server, ...files });
+}
+
+export type MenuChoice = 'models' | 'core' | 'instructions' | 'widget' | 'origins' | 'integration' | 'production' | 'done';
 
 /** A choice in the re-run menu. */
 export function menuAnswer(choice: MenuChoice): ScriptedAnswer {

@@ -8,9 +8,10 @@ import { instructionsStep } from './steps/instructions.ts';
 import { ENV_FILE, modelsStep } from './steps/models.ts';
 import { nextjsWidgetStep } from './steps/nextjs.ts';
 import { productionStep } from './steps/production.ts';
+import { standaloneOriginsStep } from './steps/standalone.ts';
 import { widgetStep } from './steps/widget.ts';
 
-type SectionId = 'models' | 'core' | 'instructions' | 'widget' | 'production';
+type SectionId = 'models' | 'core' | 'instructions' | 'widget' | 'origins' | 'production';
 
 /** One entry of the re-run menu: the steps it runs, and nothing else. */
 interface Section {
@@ -19,13 +20,17 @@ interface Section {
   steps: WizardStep[];
 }
 
-const SECTIONS: Section[] = [
-  { id: 'models', label: 'Models and keys', steps: [modelsStep] },
-  { id: 'core', label: 'Core', steps: [coreStep] },
-  { id: 'instructions', label: 'Instructions', steps: [instructionsStep] },
-  { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep] },
-  { id: 'production', label: 'Production variables', steps: [productionStep] },
-];
+/** The menu for this project: the allowed origins only for a standalone server that exists. */
+function sectionsFor(setup: ExistingSetup): Section[] {
+  return [
+    { id: 'models', label: 'Models and keys', steps: [modelsStep] },
+    { id: 'core', label: 'Core', steps: [coreStep] },
+    { id: 'instructions', label: 'Instructions', steps: [instructionsStep] },
+    { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep] },
+    ...(setup.server ? [{ id: 'origins' as const, label: 'Allowed origins of the server', steps: [standaloneOriginsStep] }] : []),
+    { id: 'production', label: 'Production variables', steps: [productionStep] },
+  ];
+}
 
 const DONE = 'done';
 
@@ -38,19 +43,20 @@ const DONE = 'done';
 export async function runRerunMenu(context: WizardContext, setup: ExistingSetup): Promise<void> {
   useExistingSetup(context, setup);
   printSetup(context, setup);
+  const sections = sectionsFor(setup);
 
   for (;;) {
     context.say('');
     const choice = await context.prompter.select<SectionId | typeof DONE>({
       message: 'What do you want to change?',
       options: [
-        ...SECTIONS.map((section) => ({ value: section.id, label: section.label })),
+        ...sections.map((section) => ({ value: section.id, label: section.label })),
         { value: DONE, label: 'Nothing else, I’m done' },
       ],
       initialValue: DONE,
     });
     if (choice === DONE) return;
-    await runSection(context, SECTIONS.find((section) => section.id === choice)!);
+    await runSection(context, sections.find((section) => section.id === choice)!);
   }
 }
 
@@ -112,5 +118,10 @@ function printSetup(context: WizardContext, setup: ExistingSetup): void {
   if (project.kind === 'nextjs') {
     context.say(`  Route: ${setup.route ?? 'not found'}`);
     context.say(`  Widget: ${setup.widget ? `in ${setup.widget}` : 'not found in the root layout'}`);
+  } else if (setup.server) {
+    const origins = setup.server.origins ? setup.server.origins.join(', ') : 'not readable';
+    context.say(`  Server: ${setup.server.path} (allowed origins: ${origins})`);
+  } else {
+    context.say('  Server: not set up yet');
   }
 }

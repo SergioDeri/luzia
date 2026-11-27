@@ -6,6 +6,7 @@ import {
   coreAnswers,
   EXISTING_KEYS,
   existingSetupProject,
+  existingStandaloneProject,
   fakeEmbeddingModel,
   fakeRunner,
   instructionsAnswers,
@@ -281,5 +282,61 @@ describe('luzia init: re-run on an existing setup', () => {
     expect(changedFiles(before, await snapshot(cwd))).toEqual(['.luzia/knowledge-base.json', 'app/layout.tsx', 'knowledge-base/instructions.md']);
     const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
     expect(summary).toMatch(/Updated: .*knowledge-base\/instructions\.md.*app\/layout\.tsx/);
+  });
+
+  describe('standalone server', () => {
+    it('summarises the server and its allowed origins, and offers to change them', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, { answers: rerunAnswers() });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Server: api\/luzia\.ts \(allowed origins: https:\/\/jamie\.example\.com, https:\/\/www\.jamie\.example\.com\)/);
+      expect(run.stdout).not.toMatch(/Route:/);
+      const menu = run.asked.find((asked) => /What do you want to change/.test(asked.message));
+      expect(menu?.options).toEqual(['models', 'core', 'instructions', 'widget', 'origins', 'production', 'done']);
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
+
+    it('changes the allowed origins in the function file after a diff, leaving the rest of it as it is', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+      const embeddings = fakeEmbeddingModel();
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers([
+          'origins',
+          [
+            answer.text(/portfolio.*domain/i, 'jamie.example.com, localhost:8080'),
+            answer.confirm(/allowed origins.*api\/luzia\.ts/, true),
+          ],
+        ]),
+        embeddingModel: embeddings.model,
+      });
+
+      expect(run.code).toBe(0);
+      // The current origins are shown, and kept when the answer is left empty.
+      expect(run.asked.find((asked) => /domain/i.test(asked.message))?.message).toContain(
+        'https://jamie.example.com, https://www.jamie.example.com',
+      );
+      expect(run.stdout).toMatch(/Update api\/luzia\.ts:[\s\S]*-\s+allowedOrigins: \['https:\/\/jamie\.example\.com', 'https:\/\/www\.jamie\.example\.com'\],[\s\S]*\+\s+allowedOrigins: \['https:\/\/jamie\.example\.com', 'http:\/\/localhost:8080'\],/);
+      const fn = await readProjectFile(cwd, 'api/luzia.ts');
+      expect(fn).toContain("allowedOrigins: ['https://jamie.example.com', 'http://localhost:8080'],");
+      expect(fn).toContain('export const OPTIONS = handler;');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual(['api/luzia.ts']);
+      expect(embeddings.embeddedValues).toEqual([]);
+      expect(run.commands).toEqual([]);
+    });
+
+    it('keeps the allowed origins when the answer is left empty', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, { answers: rerunAnswers(['origins', [answer.text(/portfolio.*domain/i, '')]]) });
+
+      expect(run.code).toBe(0);
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
   });
 });

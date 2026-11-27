@@ -17,6 +17,7 @@ import { CORE_PATH, KNOWLEDGE_BASE_DIR } from './steps/core.ts';
 import { INSTRUCTIONS_PATH } from './steps/instructions.ts';
 import { ENV_FILE } from './steps/models.ts';
 import { findLayout, routePath } from './steps/nextjs.ts';
+import { readAllowedOrigins, STANDALONE_FUNCTION } from './steps/standalone.ts';
 
 /** What an earlier `luzia init` (or the Owner) already set up in the project. */
 export interface ExistingSetup {
@@ -34,6 +35,8 @@ export interface ExistingSetup {
   route: string | null;
   /** The file the widget is in, when it was found. */
   widget: string | null;
+  /** The standalone server's function file and the origins it allows (`null` when they can't be read), when there is one. */
+  server: { path: string; origins: string[] | null } | null;
 }
 
 /**
@@ -100,14 +103,18 @@ async function otherKnowledgeBaseFiles(cwd: string): Promise<string[]> {
     .sort();
 }
 
-/** The server route and the widget in the project, for a Next.js app. */
-async function integration(context: WizardContext): Promise<Pick<ExistingSetup, 'route' | 'widget'>> {
+/** The server route and the widget in the project, for a Next.js app; the standalone server otherwise. */
+async function integration(context: WizardContext): Promise<Pick<ExistingSetup, 'route' | 'widget' | 'server'>> {
   const { project } = context.state;
-  if (project.kind !== 'nextjs') return { route: null, widget: null };
+  if (project.kind !== 'nextjs') {
+    const source = await context.readFile(STANDALONE_FUNCTION);
+    const server = source === null ? null : { path: STANDALONE_FUNCTION, origins: readAllowedOrigins(source) };
+    return { route: null, widget: null, server };
+  }
   let route: string | null = null;
   for (const extension of ['ts', 'js'] as const) {
     if ((await context.readFile(routePath(project, extension))) !== null) route = route ?? routePath(project, extension);
   }
   const layout = await findLayout(context);
-  return { route, widget: layout.content?.includes('<LuziaWidget') ? layout.path : null };
+  return { route, widget: layout.content?.includes('<LuziaWidget') ? layout.path : null, server: null };
 }
