@@ -81,6 +81,21 @@ export const standaloneOriginsStep: WizardStep = {
   },
 };
 
+/**
+ * Only the widget part of the standalone integration (used by the re-run
+ * menu): prints the snippet again with the widget options just chosen, at the
+ * endpoint read back from the portfolio's page, or the one the Owner enters.
+ */
+export const standaloneWidgetStep: WizardStep = {
+  id: 'standalone-widget',
+  applies: (context) => context.state.project.kind === 'standalone',
+  async run(context) {
+    const endpoint = context.state.endpoint ?? (await askEndpoint(context));
+    context.state.endpoint = endpoint;
+    printSnippet(context, endpoint, 'Replace the <luzia-widget> in your portfolio’s HTML with the one shown above');
+  },
+};
+
 /** Asks for the portfolio's domains until every one is a valid origin; empty keeps `current` when there are some. */
 async function askOrigins(context: WizardContext, current: string[] = []): Promise<string[]> {
   for (;;) {
@@ -281,12 +296,16 @@ function installCommands(context: WizardContext): PlannedCommand[] {
   }));
 }
 
-function printSnippet(context: WizardContext, endpoint: string): void {
+function printSnippet(
+  context: WizardContext,
+  endpoint: string,
+  todo = 'Add the script tag and <luzia-widget> shown above to your portfolio’s HTML',
+): void {
   const props: WidgetProps = { endpoint, contact: '', ...context.state.widget };
   context.say('');
   context.say('Add this to your portfolio’s HTML: the script tag in <head>, the widget inside <body>.');
   context.say('');
   for (const line of htmlWidgetSnippet(props)) context.say(line ? `  ${line}` : '');
   context.say('');
-  context.changes.todo.push('Add the script tag and <luzia-widget> shown above to your portfolio’s HTML');
+  context.changes.todo.push(todo);
 }

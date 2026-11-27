@@ -417,5 +417,59 @@ export default function RootLayout({ children }) {
       expect(run.code).toBe(0);
       expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
     });
+
+    it('reprints the snippet with the new widget options, with the placeholder endpoint when the server URL is unknown', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['widget', [...widgetAnswers({ theme: 'dark' }), answer.text(/server.*URL/i, '')]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script>');
+      const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
+      expect(snippet).toContain('endpoint="https://YOUR-LUZIA-SERVER.vercel.app/api/luzia"');
+      expect(snippet).toContain('contact="hello@jamie.dev"');
+      expect(snippet).toContain('theme="dark"');
+      const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
+      expect(summary).toContain('YOUR-LUZIA-SERVER');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+      expect(run.commands).toEqual([]);
+    });
+
+    it('reads the widget options and endpoint back from a page in the folder that has the widget', async () => {
+      const cwd = await existingStandaloneProject({
+        'index.html': `<!doctype html>
+<html>
+  <head><script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script></head>
+  <body>
+    <luzia-widget
+      endpoint="https://luzia-jamie.vercel.app/api/luzia"
+      contact="hello@jamie.dev"
+      greeting="Welcome! Ask about Jamie&#39;s projects."
+      suggested-questions="[&quot;What has Jamie shipped?&quot;,&quot;Where is Jamie based?&quot;,&quot;Can I hire Jamie?&quot;]"
+      theme="light"
+      mode="inline"
+    ></luzia-widget>
+  </body>
+</html>
+`,
+      });
+
+      const run = await runInit(cwd, { answers: rerunAnswers(['widget', widgetAnswers({ theme: 'light', mode: 'bubble' })]) });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Widget: in index\.html/);
+      expect(run.stdout).toContain("Greeting: Welcome! Ask about Jamie's projects.");
+      const initial = (question: RegExp) => run.asked.find((asked) => question.test(asked.message))?.initialValue;
+      expect(initial(/theme/i)).toBe('light');
+      expect(initial(/bubble|inline/i)).toBe('inline');
+      const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
+      expect(snippet).toContain('endpoint="https://luzia-jamie.vercel.app/api/luzia"');
+      expect(snippet).toContain('suggested-questions="[&quot;What has Jamie shipped?&quot;');
+      expect(snippet).toContain('mode="bubble"');
+      expect(run.stdout).not.toContain('YOUR-LUZIA-SERVER');
+    });
   });
 });

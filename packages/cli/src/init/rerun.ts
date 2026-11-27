@@ -8,7 +8,7 @@ import { instructionsStep } from './steps/instructions.ts';
 import { ENV_FILE, modelsStep } from './steps/models.ts';
 import { nextjsWidgetStep } from './steps/nextjs.ts';
 import { productionStep } from './steps/production.ts';
-import { standaloneOriginsStep } from './steps/standalone.ts';
+import { standaloneOriginsStep, standaloneWidgetStep } from './steps/standalone.ts';
 import { widgetStep } from './steps/widget.ts';
 
 type SectionId = 'models' | 'core' | 'instructions' | 'widget' | 'origins' | 'production';
@@ -26,7 +26,7 @@ function sectionsFor(setup: ExistingSetup): Section[] {
     { id: 'models', label: 'Models and keys', steps: [modelsStep] },
     { id: 'core', label: 'Core', steps: [coreStep] },
     { id: 'instructions', label: 'Instructions', steps: [instructionsStep] },
-    { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep] },
+    { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep, standaloneWidgetStep] },
     ...(setup.server ? [{ id: 'origins' as const, label: 'Allowed origins of the server', steps: [standaloneOriginsStep] }] : []),
     { id: 'production', label: 'Production variables', steps: [productionStep] },
   ];
@@ -121,6 +121,7 @@ function printSetup(context: WizardContext, setup: ExistingSetup): void {
   } else if (setup.server) {
     const origins = setup.server.origins ? setup.server.origins.join(', ') : 'not readable';
     context.say(`  Server: ${setup.server.path} (allowed origins: ${origins})`);
+    context.say(`  Widget: ${setup.widget ? `in ${setup.widget}` : 'not in this folder (it goes in your portfolio’s HTML)'}`);
   } else {
     context.say('  Server: not set up yet');
   }

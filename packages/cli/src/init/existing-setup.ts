@@ -18,7 +18,7 @@ import { INSTRUCTIONS_PATH } from './steps/instructions.ts';
 import { ENV_FILE } from './steps/models.ts';
 import { findLayout, routePath } from './steps/nextjs.ts';
 import { readAllowedOrigins, STANDALONE_FUNCTION } from './steps/standalone.ts';
-import { readReactWidget, type WidgetProps } from './widget-snippet.ts';
+import { readHtmlWidget, readReactWidget, type WidgetProps } from './widget-snippet.ts';
 
 /** What an earlier `luzia init` (or the Owner) already set up in the project. */
 export interface ExistingSetup {
@@ -84,6 +84,9 @@ export function useExistingSetup(context: WizardContext, setup: ExistingSetup): 
   if (setup.instructions !== null) context.state.instructions = setup.instructions;
   const { endpoint: _endpoint, contact: _contact, ...widget } = setup.widgetOptions;
   if (Object.keys(widget).length) context.state.widget = { contact: setup.core.contact, ...widget };
+  if (context.state.project.kind === 'standalone' && setup.widgetOptions.endpoint) {
+    context.state.endpoint = setup.widgetOptions.endpoint;
+  }
 }
 
 function modelsFrom(env: Record<string, string>): ModelChoices | null {
@@ -108,6 +111,23 @@ async function otherKnowledgeBaseFiles(cwd: string): Promise<string[]> {
     .sort();
 }
 
+/**
+ * A page of a standalone folder (top level or `public/`) with `<luzia-widget>`,
+ * when the portfolio lives in the same folder, and the widget options it has.
+ */
+async function htmlPageWithWidget(context: WizardContext): Promise<{ path: string; widget: Partial<WidgetProps> } | null> {
+  for (const dir of ['', 'public']) {
+    const entries = await readdir(path.join(context.cwd, dir), { withFileTypes: true }).catch(() => []);
+    const pages = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.html')).map((entry) => entry.name).sort();
+    for (const name of pages) {
+      const file = dir ? `${dir}/${name}` : name;
+      const widget = readHtmlWidget((await context.readFile(file)) ?? '');
+      if (widget) return { path: file, widget };
+    }
+  }
+  return null;
+}
+
 /** The server route and the widget in the project, for a Next.js app; the standalone server otherwise. */
 async function integration(
   context: WizardContext,
@@ -116,7 +136,8 @@ async function integration(
   if (project.kind !== 'nextjs') {
     const source = await context.readFile(STANDALONE_FUNCTION);
     const server = source === null ? null : { path: STANDALONE_FUNCTION, origins: readAllowedOrigins(source) };
-    return { route: null, widget: null, server, widgetOptions: {} };
+    const page = await htmlPageWithWidget(context);
+    return { route: null, widget: page?.path ?? null, server, widgetOptions: page?.widget ?? {} };
   }
   let route: string | null = null;
   for (const extension of ['ts', 'js'] as const) {
