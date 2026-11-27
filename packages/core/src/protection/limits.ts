@@ -1,4 +1,4 @@
-import type { Env } from '../chat-model.ts';
+import type { Env } from '../env.ts';
 import { LuziaConfigError } from '../errors.ts';
 import { errorResponse } from '../http.ts';
 

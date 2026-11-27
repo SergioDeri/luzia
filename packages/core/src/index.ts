@@ -20,7 +20,8 @@ export type {
 export { createLuziaHandler, chatRequestBodySchema } from './handler.ts';
 export type { ChatRequestBody, LuziaHandler, LuziaHandlerConfig } from './handler.ts';
 export { CHAT_MODEL_ENV, CHAT_PROVIDER_ENV, CHAT_PROVIDERS, resolveChatModel } from './chat-model.ts';
-export type { ChatModelConfig, ChatModelInstance, ChatProvider, Env } from './chat-model.ts';
+export type { ChatModelConfig, ChatModelInstance, ChatProvider } from './chat-model.ts';
+export type { Env } from './env.ts';
 export { EMBEDDING_MODEL_ENV, EMBEDDING_PROVIDER_ENV, EMBEDDING_PROVIDERS } from './embedding-model.ts';
 export type { EmbeddingModelConfig, EmbeddingModelInstance, EmbeddingProvider } from './embedding-model.ts';
 export { createInMemoryVectorStore } from './retrieval/vector-store.ts';

@@ -1,4 +1,4 @@
-import type { Env } from '../chat-model.ts';
+import type { Env } from '../env.ts';
 import { errorResponse } from '../http.ts';
 import { preflightResponse, withCorsHeaders } from './cors.ts';
 import { ALLOWED_ORIGINS_ENV, checkOrigin, resolveAllowedOrigins } from './origins.ts';

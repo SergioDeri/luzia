@@ -1,8 +1,9 @@
 import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { EmbeddingModel } from 'ai';
-import type { Env } from './chat-model.ts';
+import type { Env } from './env.ts';
 import { LuziaConfigError } from './errors.ts';
+import { providerModelFromEnv, resolveProviderModel, type ProviderModelConfig } from './providers.ts';
 
 /** A ready-made AI SDK embedding model (any provider). */
 export type EmbeddingModelInstance = Exclude<EmbeddingModel, string>;
@@ -29,9 +30,7 @@ export type EmbeddingProvider = keyof typeof EMBEDDING_PROVIDERS;
  * a built-in provider by name (API key read server-side from the provider's
  * environment variable unless given), or any AI SDK embedding model instance.
  */
-export type EmbeddingModelConfig =
-  | { provider: EmbeddingProvider; model: string; apiKey?: string }
-  | { model: EmbeddingModelInstance };
+export type EmbeddingModelConfig = ProviderModelConfig<EmbeddingProvider, EmbeddingModelInstance>;
 
 /** Environment variables used when `embedding` is not configured explicitly. */
 export const EMBEDDING_PROVIDER_ENV = 'LUZIA_EMBEDDING_PROVIDER';
@@ -54,27 +53,17 @@ export function resolveEmbeddingModel(
   const embedding = config ?? embeddingModelConfigFromEnv(env);
   if (!embedding) return null;
 
-  if (typeof embedding.model !== 'string') {
-    return { model: embedding.model, id: embeddingModelId(embedding.model) };
-  }
-  if (!('provider' in embedding)) {
-    throw new LuziaConfigError('embedding.model must be an AI SDK embedding model when no provider is given.');
-  }
-
-  const provider = EMBEDDING_PROVIDERS[embedding.provider];
-  if (!provider) {
-    throw new LuziaConfigError(
-      `Unknown embeddings provider "${embedding.provider}". Use one of: ${Object.keys(EMBEDDING_PROVIDERS).join(', ')} ` +
-        '(Anthropic has no embeddings API).',
-    );
-  }
-  const apiKey = embedding.apiKey ?? env[provider.apiKeyEnv];
-  if (!apiKey) {
-    throw new LuziaConfigError(
-      `Missing API key for embeddings provider "${embedding.provider}". Set the ${provider.apiKeyEnv} environment variable.`,
-    );
-  }
-  const model = provider.create(apiKey, embedding.model);
+  const model = resolveProviderModel<EmbeddingModelInstance>(
+    {
+      configKey: 'embedding',
+      label: 'embeddings',
+      instanceDescription: 'an AI SDK embedding model',
+      providers: EMBEDDING_PROVIDERS,
+      unknownProviderHint: '(Anthropic has no embeddings API)',
+    },
+    embedding,
+    env,
+  );
   return { model, id: embeddingModelId(model) };
 }
 
@@ -83,15 +72,14 @@ function embeddingModelId(model: EmbeddingModelInstance): string {
   return `${model.provider}:${model.modelId}`;
 }
 
-function embeddingModelConfigFromEnv(env: Env): EmbeddingModelConfig | null {
-  const provider = env[EMBEDDING_PROVIDER_ENV];
-  const model = env[EMBEDDING_MODEL_ENV];
-  if (!provider && !model) return null;
-  if (!provider || !model) {
+function embeddingModelConfigFromEnv(env: Env): { provider: string; model: string } | null {
+  if (!env[EMBEDDING_PROVIDER_ENV] && !env[EMBEDDING_MODEL_ENV]) return null;
+  const fromEnv = providerModelFromEnv(env, EMBEDDING_PROVIDER_ENV, EMBEDDING_MODEL_ENV);
+  if (!fromEnv) {
     throw new LuziaConfigError(
       `Set both ${EMBEDDING_PROVIDER_ENV} (${Object.keys(EMBEDDING_PROVIDERS).join(' | ')}) and ${EMBEDDING_MODEL_ENV} ` +
         'to configure the embeddings model.',
     );
   }
-  return { provider: provider as EmbeddingProvider, model };
+  return fromEnv;
 }

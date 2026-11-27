@@ -1,7 +1,8 @@
 import { streamText, type ModelMessage } from 'ai';
 import { z } from 'zod';
-import { resolveChatModel, type ChatModelConfig, type Env } from './chat-model.ts';
+import { resolveChatModel, type ChatModelConfig } from './chat-model.ts';
 import type { EmbeddingModelConfig } from './embedding-model.ts';
+import { serverEnv, type Env } from './env.ts';
 import { errorResponse } from './http.ts';
 import type { CompiledKnowledgeBase, KnowledgeBaseChunk } from './knowledge-base/compiled.ts';
 import { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
@@ -56,7 +57,7 @@ export type ChatRequestBody = z.infer<typeof chatRequestBodySchema>;
  * missing API key or invalid Knowledge Base fails at startup, not on first chat.
  */
 export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
-  const env = config.env ?? globalThis.process?.env ?? {};
+  const env = serverEnv(config.env);
   const knowledgeBase = loadCompiledKnowledgeBase(config.knowledgeBase);
   const model = resolveChatModel(config.chat, env);
   // Origins, CORS and limits: see ./protection.

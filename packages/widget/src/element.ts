@@ -73,9 +73,10 @@ const TEMPLATE = `
 /**
  * `<luzia-widget endpoint="/api/luzia">`: a floating bubble that opens a chat
  * panel where the Visitor talks to the Agent, or with `mode="inline"` the chat
- * itself, embedded where the element sits. Attributes: `endpoint`, `greeting`,
- * `suggested-questions` (JSON array of strings), `mode`, `theme`. Each is also
- * a property (`suggestedQuestions` takes an array).
+ * itself, embedded where the element sits. Attributes (see
+ * {@link LuziaWidgetConfig}): `endpoint`, `contact`, `greeting`,
+ * `suggested-questions` (JSON array of strings), `mode` and `theme`. Each is
+ * also a property (`suggestedQuestions` takes an array).
  *
  * State lives in a {@link Conversation}; this element only renders its
  * snapshots and forwards Visitor input to it.

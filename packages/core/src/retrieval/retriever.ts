@@ -1,5 +1,5 @@
 import { embed } from 'ai';
-import type { Env } from '../chat-model.ts';
+import type { Env } from '../env.ts';
 import {
   EMBEDDING_MODEL_ENV,
   EMBEDDING_PROVIDER_ENV,

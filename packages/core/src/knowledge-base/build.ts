@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { embedMany } from 'ai';
-import type { Env } from '../chat-model.ts';
+import { serverEnv, type Env } from '../env.ts';
 import {
   EMBEDDING_MODEL_ENV,
   EMBEDDING_PROVIDER_ENV,
@@ -15,7 +15,7 @@ import {
   type KnowledgeBaseChunk,
   type KnowledgeBaseDocument,
 } from './compiled.ts';
-import { pdfReader, SOURCE_READERS, type SourceSection } from './sources.ts';
+import { SOURCE_READERS, type SourceSection } from './sources.ts';
 import { DEFAULT_MAX_CHUNK_CHARS, splitSection } from './split.ts';
 
 /** File names (case-insensitive) that identify the Core and the Instructions. */
@@ -113,7 +113,7 @@ async function readRetrievableContent(dir: string, fileNames: string[], maxChars
 
     const result = await reader.read(path.join(dir, source));
     content.files.push(source);
-    if (reader === pdfReader) content.pdfPages += result.pages ?? 0;
+    content.pdfPages += result.pages ?? 0;
     content.warnings.push(...(result.warnings ?? []));
     for (const section of result.sections.flatMap((s) => splitSection(s, maxChars))) {
       content.pieces.push({ source, headings: section.headings, text: chunkText(section) });
@@ -133,7 +133,7 @@ async function embedPieces(
 ): Promise<Pick<CompiledKnowledgeBase, 'chunks' | 'embeddingModel'>> {
   if (pieces.length === 0) return { chunks: [], embeddingModel: null };
 
-  const embedding = resolveEmbeddingModel(options.embedding, options.env ?? globalThis.process?.env ?? {});
+  const embedding = resolveEmbeddingModel(options.embedding, serverEnv(options.env));
   if (!embedding) {
     const sources = [...new Set(pieces.map((piece) => piece.source))].join(', ');
     throw new KnowledgeBaseError(
