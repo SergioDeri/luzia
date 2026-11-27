@@ -45,3 +45,44 @@ function splitLines(text: string): string[] {
   if (lines.at(-1) === '') lines.pop();
   return lines;
 }
+
+/** Whether `filePath` is a dotenv file (`.env`, `.env.local`, `.env.production`, …), whose values may be secrets. */
+export function isDotenvFile(filePath: string): boolean {
+  const name = filePath.split(/[\\/]/).at(-1) ?? '';
+  return name === '.env' || name.startsWith('.env.');
+}
+
+/**
+ * Hides every value in a dotenv file's lines before they are shown, whatever
+ * the variable: an Owner's `.env.local` can hold secrets the wizard knows
+ * nothing about. luzIA's own settings (`LUZIA_*`: providers, models, limits)
+ * are not secrets and stay readable. Comments and blank lines are kept.
+ * Values that differ from `previous` (or are new) are shown as
+ * `<hidden, new value>`, so a diff still shows which secrets change.
+ */
+export function maskDotenv(text: string, previous?: string): string {
+  const before = previous === undefined ? undefined : dotenvValues(previous);
+  return text
+    .split('\n')
+    .map((line) => {
+      const entry = dotenvEntry(line);
+      if (!entry || entry.name.startsWith('LUZIA_') || entry.value === '') return line;
+      const changed = before !== undefined && before.get(entry.name) !== entry.value;
+      return `${entry.head}${changed ? '<hidden, new value>' : '<hidden>'}`;
+    })
+    .join('\n');
+}
+
+function dotenvEntry(line: string): { head: string; name: string; value: string } | null {
+  const match = /^(\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\s*=\s*)(.*)$/.exec(line);
+  return match ? { head: match[1]!, name: match[2]!, value: match[3]! } : null;
+}
+
+function dotenvValues(text: string): Map<string, string> {
+  const values = new Map<string, string>();
+  for (const line of text.split('\n')) {
+    const entry = dotenvEntry(line);
+    if (entry) values.set(entry.name, entry.value);
+  }
+  return values;
+}

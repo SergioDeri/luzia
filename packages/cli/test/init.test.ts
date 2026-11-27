@@ -113,10 +113,30 @@ describe('luzia init', () => {
     expect(env).toContain(`ANTHROPIC_API_KEY=${OWNER_KEYS.anthropic}`);
     // The diff of .env.local was shown before writing, with keys masked.
     expect(run.stdout).toMatch(/Update \.env\.local:[\s\S]*- LUZIA_CHAT_MODEL=old-model[\s\S]*\+ LUZIA_CHAT_MODEL=claude-sonnet-5-5/);
-    expect(run.stdout).toContain('+ ANTHROPIC_API_KEY=<hidden>');
+    expect(run.stdout).toContain('+ ANTHROPIC_API_KEY=<hidden, new value>');
     expect(run.output).not.toContain(OWNER_KEYS.anthropic);
     // Already ignored by .env*.local, so .gitignore is left alone.
     expect(await readProjectFile(cwd, '.gitignore')).toBe('node_modules/\n.env*.local\n.luzia/\n');
+  });
+
+  it('never shows the values of other variables or old keys in the .env.local diff', async () => {
+    const cwd = await ownerProject('nextjs-app', {
+      '.env.local':
+        'STRIPE_SECRET=sk_live_unrelated_secret\nANTHROPIC_API_KEY=sk-ant-old-key-111\nLUZIA_CHAT_MODEL=old-model\nDATABASE_URL=postgres://user:pw@db/portfolio\n',
+      '.gitignore': 'node_modules/\n.env*.local\n.luzia/\n',
+    });
+
+    const run = await runInit(cwd, { answers: fullRunAnswers() });
+
+    expect(run.code).toBe(0);
+    expect(run.stdout).toMatch(/Update \.env\.local:/);
+    for (const secret of ['sk_live_unrelated_secret', 'sk-ant-old-key-111', 'postgres://user:pw@db/portfolio']) {
+      expect(run.output).not.toContain(secret);
+    }
+    // Variable names stay visible, and luzIA's own settings (not secrets) are shown as they are.
+    expect(run.stdout).toContain('STRIPE_SECRET=<hidden>');
+    expect(run.stdout).toMatch(/- ANTHROPIC_API_KEY=<hidden>[\s\S]*\+ ANTHROPIC_API_KEY=<hidden, new value>/);
+    expect(run.stdout).toMatch(/\+ LUZIA_CHAT_MODEL=claude-sonnet-5-5/);
   });
 
   it('offers the providers core supports, asks a shared key once, and accepts any model id', async () => {

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { resolveChatModel, type ChatModelInstance, type ChatProvider, type EmbeddingProvider } from '@luzia/core';
 import type { CliIo } from '../command.ts';
 import type { CommandRequest, CommandRunner } from './command-runner.ts';
-import { lineDiff } from './diff.ts';
+import { isDotenvFile, lineDiff, maskDotenv } from './diff.ts';
 import type { ProjectInfo } from './project.ts';
 import type { Prompter } from './prompter.ts';
 
@@ -187,7 +187,10 @@ export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardC
           context.say(`  Replace ${file.path}`);
         } else {
           context.say(`  Update ${file.path}:`);
-          for (const line of lineDiff(file.before, file.content)) context.say(`    ${line}`);
+          const shown = isDotenvFile(file.path)
+            ? lineDiff(maskDotenv(file.before), maskDotenv(file.content, file.before))
+            : lineDiff(file.before, file.content);
+          for (const line of shown) context.say(`    ${line}`);
         }
       }
       for (const command of commands) context.say(`  Run ${commandLine(command)}`);
