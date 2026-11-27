@@ -15,7 +15,7 @@ import {
   type KnowledgeBaseChunk,
   type KnowledgeBaseDocument,
 } from './compiled.ts';
-import { SOURCE_READERS, type SourceSection } from './sources.ts';
+import { pdfReader, SOURCE_READERS, type SourceSection } from './sources.ts';
 import { DEFAULT_MAX_CHUNK_CHARS, splitSection } from './split.ts';
 
 /** File names (case-insensitive) that identify the Core and the Instructions. */
@@ -37,13 +37,34 @@ export interface BuildKnowledgeBaseOptions {
   maxChunkChars?: number;
 }
 
+/** A summary of what a build compiled, for the Owner. */
+export interface KnowledgeBaseBuildReport {
+  /** Every file compiled (Core and Instructions included), relative to the Knowledge Base folder. */
+  files: string[];
+  /** Retrievable chunks produced. */
+  chunks: number;
+  /** Pages whose text was extracted from PDF files. */
+  pdfPages: number;
+  /** Problems the Owner should fix, e.g. a PDF with no extractable text. They do not fail the build. */
+  warnings: string[];
+}
+
+export interface KnowledgeBaseBuildResult {
+  knowledgeBase: CompiledKnowledgeBase;
+  report: KnowledgeBaseBuildReport;
+}
+
 /**
  * Compiles a Knowledge Base folder into a {@link CompiledKnowledgeBase}.
  * Throws a {@link KnowledgeBaseError} when the folder or its Core file is missing.
+ * Use {@link buildKnowledgeBaseWithReport} to also get a summary of the build.
  */
-export async function buildKnowledgeBase(
-  options: BuildKnowledgeBaseOptions,
-): Promise<CompiledKnowledgeBase> {
+export async function buildKnowledgeBase(options: BuildKnowledgeBaseOptions): Promise<CompiledKnowledgeBase> {
+  return (await buildKnowledgeBaseWithReport(options)).knowledgeBase;
+}
+
+/** Like {@link buildKnowledgeBase}, also reporting files processed, chunks produced, PDF pages and warnings. */
+export async function buildKnowledgeBaseWithReport(options: BuildKnowledgeBaseOptions): Promise<KnowledgeBaseBuildResult> {
   const dir = path.resolve(options.dir);
   const fileNames = await listFiles(dir);
 
@@ -56,36 +77,49 @@ export async function buildKnowledgeBase(
   }
   const instructions = await readNamedFile(dir, fileNames, INSTRUCTIONS_FILE_NAME);
 
-  const pieces = await readRetrievableContent(dir, fileNames, options.maxChunkChars ?? DEFAULT_MAX_CHUNK_CHARS);
-  const { chunks, embeddingModel } = await embedPieces(pieces, options);
+  const content = await readRetrievableContent(dir, fileNames, options.maxChunkChars ?? DEFAULT_MAX_CHUNK_CHARS);
+  const { chunks, embeddingModel } = await embedPieces(content.pieces, options);
 
   return {
-    format: COMPILED_KNOWLEDGE_BASE_FORMAT,
-    core,
-    instructions,
-    chunks,
-    embeddingModel,
+    knowledgeBase: { format: COMPILED_KNOWLEDGE_BASE_FORMAT, core, instructions, chunks, embeddingModel },
+    report: {
+      files: [core.source, ...(instructions ? [instructions.source] : []), ...content.files],
+      chunks: chunks.length,
+      pdfPages: content.pdfPages,
+      warnings: content.warnings,
+    },
   };
 }
 
 type ChunkPiece = Omit<KnowledgeBaseChunk, 'vector'>;
 
+interface RetrievableContent {
+  pieces: ChunkPiece[];
+  /** Files read, in build order. */
+  files: string[];
+  pdfPages: number;
+  warnings: string[];
+}
+
 /** Reads every file other than Core and Instructions into size-limited chunks (without vectors yet). */
-async function readRetrievableContent(dir: string, fileNames: string[], maxChars: number): Promise<ChunkPiece[]> {
+async function readRetrievableContent(dir: string, fileNames: string[], maxChars: number): Promise<RetrievableContent> {
   const reserved = [CORE_FILE_NAME, INSTRUCTIONS_FILE_NAME];
-  const pieces: ChunkPiece[] = [];
+  const content: RetrievableContent = { pieces: [], files: [], pdfPages: 0, warnings: [] };
 
   for (const source of [...fileNames].sort()) {
     if (reserved.includes(source.toLowerCase())) continue;
     const reader = SOURCE_READERS.find((candidate) => candidate.accepts(source));
     if (!reader) continue;
 
-    const sections = await reader.read(path.join(dir, source));
-    for (const section of sections.flatMap((s) => splitSection(s, maxChars))) {
-      pieces.push({ source, headings: section.headings, text: chunkText(section) });
+    const result = await reader.read(path.join(dir, source));
+    content.files.push(source);
+    if (reader === pdfReader) content.pdfPages += result.pages ?? 0;
+    content.warnings.push(...(result.warnings ?? []));
+    for (const section of result.sections.flatMap((s) => splitSection(s, maxChars))) {
+      content.pieces.push({ source, headings: section.headings, text: chunkText(section) });
     }
   }
-  return pieces;
+  return content;
 }
 
 /** The chunk text starts with its heading path, so both the embedder and the Agent see where it comes from. */

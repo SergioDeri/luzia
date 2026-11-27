@@ -4,9 +4,9 @@
 
 **Blocked by:** 04 — RAG: heading-based chunking, embeddings and in-memory VectorStore
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] PDF text is extracted at build time and becomes retrievable chunks attributed to the PDF source
-- [ ] Build warns when a PDF yields little or no extractable text, suggesting markdown instead
-- [ ] Build prints a report: files processed, chunks produced, PDF pages extracted
-- [ ] Seam 1 test with a small fixture PDF: a question about a fact only in the PDF results in that text reaching the model
+- [x] PDF text is extracted at build time and becomes retrievable chunks attributed to the PDF source
+- [x] Build warns when a PDF yields little or no extractable text, suggesting markdown instead
+- [x] Build prints a report: files processed, chunks produced, PDF pages extracted
+- [x] Seam 1 test with a small fixture PDF: a question about a fact only in the PDF results in that text reaching the model

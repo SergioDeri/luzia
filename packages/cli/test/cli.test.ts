@@ -54,7 +54,21 @@ describe('luzia build', () => {
     const code = await runCli(['build', '--dir', path.join(coreFixtures, 'core-only')], io);
 
     expect(code).toBe(0);
-    expect(out.join('\n')).toMatch(/0 chunks/);
+    expect(out.join('\n')).toContain('Chunks produced: 0');
+  });
+
+  it('prints a report of files processed, chunks produced and PDF pages extracted, and warns about a PDF without text', async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-cli-'));
+    const { io, out, err } = captureIo(cwd);
+
+    const code = await runCli(['build', '--dir', path.join(coreFixtures, 'with-scanned-pdf')], io);
+
+    expect(code).toBe(0);
+    const report = out.join('\n');
+    expect(report).toContain('Files processed: 2 (core.md, scan.pdf)');
+    expect(report).toContain('Chunks produced: 0');
+    expect(report).toContain('PDF pages extracted: 1');
+    expect(err.join('\n')).toMatch(/^Warning: scan\.pdf has little or no extractable text.*markdown/s);
   });
 
   it('exits non-zero with a clear message when there is content to embed but no embeddings model', async () => {
