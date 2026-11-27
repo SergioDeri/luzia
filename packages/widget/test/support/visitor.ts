@@ -139,6 +139,17 @@ export function visitor(host: Element) {
       const bubble = chat()?.querySelector<HTMLElement>('.speech');
       return bubble && isOnScreen(bubble) ? (bubble.textContent ?? '') : null;
     },
+    /** Moves the mouse into (or out of) luzIA's speech bubble. */
+    hoverSpeechBubble: (inside = true) => {
+      const bubble = chat()?.querySelector('.speech');
+      if (!bubble) throw new Error('No speech bubble.');
+      bubble.dispatchEvent(new MouseEvent(inside ? 'mouseenter' : 'mouseleave'));
+    },
+    /** Whether the Visitor can scroll the bubble's text when it doesn't fit. */
+    speechBubbleScrolls: (): boolean => {
+      const text = chat()?.querySelector('.speech-text');
+      return Boolean(text && ['auto', 'scroll'].includes(getComputedStyle(text).overflowY));
+    },
     /** Whether the speech bubble is hidden from screen readers (replies are announced by the status region). */
     speechBubbleIsDecorative: (): boolean => chat()?.querySelector('.speech')?.getAttribute('aria-hidden') === 'true',
     /** The conversation as the Visitor sees it in the history below the picture (messages on screen only). */

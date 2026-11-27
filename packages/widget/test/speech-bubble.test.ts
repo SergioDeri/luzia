@@ -108,4 +108,32 @@ describe("luzIA's speech bubble", () => {
     expect(widget.speechBubble()).toBeNull();
     expect(widget.visibleTranscript().at(-1)).toEqual({ role: 'assistant', text: 'She builds' });
   });
+
+  it('lets the Visitor scroll a long reply in the bubble to read its beginning', async () => {
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+    const reply = await ask(widget, 'Tell me everything.');
+    await reply.push('A very long reply. '.repeat(40));
+
+    expect(widget.speechBubbleScrolls()).toBe(true);
+  });
+
+  it('keeps the bubble while the mouse is over it, and lets it go a few seconds after the mouse leaves', async () => {
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+    const reply = await ask(widget, 'What does she do?');
+    await reply.push('She builds web products.');
+    await reply.end();
+
+    widget.hoverSpeechBubble();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(widget.speechBubble()).toBe('She builds web products.');
+
+    widget.hoverSpeechBubble(false);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(widget.speechBubble()).toBe('She builds web products.');
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(widget.speechBubble()).toBeNull();
+    expect(widget.visibleTranscript().at(-1)).toEqual({ role: 'assistant', text: 'She builds web products.' });
+  });
 });

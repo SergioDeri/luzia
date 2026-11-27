@@ -206,6 +206,8 @@ class View {
   /** The reply luzIA is "saying" in the speech bubble (index in the conversation), kept out of the history until it ends. */
   #speaking: number | null = null;
   #speechTimer: ReturnType<typeof setTimeout> | undefined;
+  /** While the mouse is over the bubble, it stays (the Visitor may be reading or scrolling it). */
+  #speechHovered = false;
   readonly #messages: HTMLOListElement;
   readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
@@ -230,6 +232,16 @@ class View {
     this.#stage = root.querySelector('.stage')!;
     this.#speech = root.querySelector('.speech')!;
     this.#speechText = root.querySelector('.speech-text')!;
+    this.#speech.addEventListener('mouseenter', () => {
+      this.#speechHovered = true;
+      clearTimeout(this.#speechTimer);
+      this.#speechTimer = undefined;
+      this.#speech.classList.remove('leaving');
+    });
+    this.#speech.addEventListener('mouseleave', () => {
+      this.#speechHovered = false;
+      this.#render(this.#conversation.state);
+    });
     this.#messages = root.querySelector('.messages')!;
     this.#announcer = root.querySelector('.announcer')!;
     this.#suggestions = root.querySelector('.suggestions')!;
@@ -372,7 +384,7 @@ class View {
     } else if (this.#speaking !== null) {
       const stillThisReply = this.#speaking === last && state.status === 'idle';
       if (!stillThisReply) this.#stopSpeaking();
-      else if (this.#speechTimer === undefined) {
+      else if (this.#speechTimer === undefined && !this.#speechHovered) {
         const text = state.messages[last]!.content;
         this.#speechTimer = setTimeout(() => this.#fadeSpeech(), Math.min(10_000, 4_000 + text.length * 40));
       }
@@ -388,9 +400,11 @@ class View {
     // Nothing to say yet (the reply hasn't started): no empty bubble.
     this.#speech.hidden = text === '';
     this.#stage.toggleAttribute('data-saying', !this.#speech.hidden);
-    if (this.#speechText.textContent !== text) this.#speechText.textContent = text;
-    // Long replies keep their latest lines in view, like subtitles.
-    this.#speechText.scrollTop = this.#speechText.scrollHeight;
+    const box = this.#speechText;
+    // Follow the reply as it grows, like subtitles, unless the Visitor scrolled up to read its beginning.
+    const following = box.scrollHeight - box.scrollTop - box.clientHeight < 24;
+    if (box.textContent !== text) box.textContent = text;
+    if (following) box.scrollTop = box.scrollHeight;
   }
 
   #fadeSpeech(): void {
@@ -406,6 +420,7 @@ class View {
     this.#speechTimer = undefined;
     this.#speaking = null;
     this.#speech.hidden = true;
+    this.#speechHovered = false;
     this.#stage.removeAttribute('data-saying');
     this.#speech.classList.remove('leaving');
     this.#speechText.textContent = '';

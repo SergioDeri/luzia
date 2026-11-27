@@ -159,7 +159,11 @@ export const styles = `
   .speech-text {
     display: block;
     max-height: calc(var(--luzia-avatar-size, clamp(7rem, 30vh, 13rem)) - 2.75rem);
-    overflow: hidden;
+    /* Long replies scroll inside the bubble, so their beginning can be read. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding-inline-end: 0.25rem;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
