@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "Embeddable luzIA chat widget (framework-free Web Component)",
   "license": "MIT",
+  "author": "Sergio Deri <sergio.deri@astrocode.uy>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioDeri/luzia.git",
+    "directory": "packages/widget"
+  },
+  "homepage": "https://github.com/SergioDeri/luzia/tree/main/packages/widget#readme",
+  "bugs": {
+    "url": "https://github.com/SergioDeri/luzia/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts",

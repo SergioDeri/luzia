@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "Run the luzIA command line with npx luzia (setup wizard, Knowledge Base build, evals)",
   "license": "MIT",
+  "author": "Sergio Deri <sergio.deri@astrocode.uy>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioDeri/luzia.git",
+    "directory": "packages/luzia"
+  },
+  "homepage": "https://github.com/SergioDeri/luzia/tree/main/packages/luzia#readme",
+  "bugs": {
+    "url": "https://github.com/SergioDeri/luzia/issues"
+  },
   "type": "module",
   "bin": {
     "luzia": "./bin.js"

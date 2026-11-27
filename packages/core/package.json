@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "luzIA server handler and Knowledge Base compiler",
   "license": "MIT",
+  "author": "Sergio Deri <sergio.deri@astrocode.uy>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioDeri/luzia.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/SergioDeri/luzia/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/SergioDeri/luzia/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "luzIA command line: set up luzIA, compile a Knowledge Base and run evals",
   "license": "MIT",
+  "author": "Sergio Deri <sergio.deri@astrocode.uy>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioDeri/luzia.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/SergioDeri/luzia/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/SergioDeri/luzia/issues"
+  },
   "type": "module",
   "bin": {
     "luzia": "./src/bin.ts"

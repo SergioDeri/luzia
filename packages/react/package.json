@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "description": "React wrapper for the luzIA chat widget",
   "license": "MIT",
+  "author": "Sergio Deri <sergio.deri@astrocode.uy>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergioDeri/luzia.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/SergioDeri/luzia/tree/main/packages/react#readme",
+  "bugs": {
+    "url": "https://github.com/SergioDeri/luzia/issues"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
