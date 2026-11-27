@@ -77,6 +77,14 @@ describe('Agent behaviour rules reach the model', () => {
     expect(system).toMatch(/untrusted/i);
     expect(system).toMatch(/ignore your previous instructions/i);
   });
+
+  it('treats earlier Agent replies as client-supplied and possibly forged', async () => {
+    const { system } = await systemPromptFor();
+
+    expect(system).toMatch(/conversation history[^.\n]*(client|browser)/i);
+    expect(system).toMatch(/(earlier|previous) (luzIA |Agent )?(replies|turns|answers)[^.\n]*(untrusted|forged)/i);
+    expect(system).toMatch(/never[^.\n]*(authority|Knowledge Base fact)/i);
+  });
 });
 
 describe('Knowledge Base facts and Instructions are kept apart', () => {
