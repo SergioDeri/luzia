@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+  A static portfolio (served from https://jamie.example.com, e.g. GitHub Pages)
+  using the luzIA server deployed from this example. Only two things are
+  needed: the script bundle and the <luzia-widget> element pointing at the
+  server. The portfolio's origin must be in the server's allowedOrigins.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jamie Rivera</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 640px; margin: 4rem auto; padding: 0 1rem; }
+      luzia-widget { --luzia-accent: #0f766e; }
+    </style>
+  </head>
+  <body>
+    <h1>Jamie Rivera</h1>
+    <p>Full-stack developer. Open the luzIA bubble in the corner to ask about Jamie.</p>
+
+    <luzia-widget
+      endpoint="https://luzia-jamie.vercel.app/api/luzia"
+      contact="jamie.rivera@example.com"
+      theme="auto"
+      greeting="Hi! I'm luzIA, an AI agent that answers questions about Jamie. What would you like to know?"
+      suggested-questions='["What role is Jamie looking for?", "What is Jamie’s main tech stack?", "Is Jamie open to remote work?"]'
+    ></luzia-widget>
+  </body>
+</html>

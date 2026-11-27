@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 — Minimal widget; 04 — RAG; 05 — CV PDF extraction and build report; 06 — Protection: allowed origins, CORS and limits; 08 — Widget customization and inline mode; 10 — Evals
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The widget ships as a single script bundle usable via a `<script>` tag on any site
-- [ ] The handler can be deployed standalone as a serverless function, with allowed origins configured for the portfolio's domain
-- [ ] The Knowledge Base build runs as part of the Next.js build so updating the Knowledge Base is commit + deploy
-- [ ] README documents both paths on Vercel end to end: Knowledge Base layout (Core, Instructions, markdown, PDF), provider/embeddings configuration, environment variables, limits, origins, widget options and `luzia eval`
-- [ ] README uses the glossary terms from CONTEXT.md and contains no AI-assistance attribution
-- [ ] The Next.js example matches the documented setup
+- [x] The widget ships as a single script bundle usable via a `<script>` tag on any site
+- [x] The handler can be deployed standalone as a serverless function, with allowed origins configured for the portfolio's domain
+- [x] The Knowledge Base build runs as part of the Next.js build so updating the Knowledge Base is commit + deploy
+- [x] README documents both paths on Vercel end to end: Knowledge Base layout (Core, Instructions, markdown, PDF), provider/embeddings configuration, environment variables, limits, origins, widget options and `luzia eval`
+- [x] README uses the glossary terms from CONTEXT.md and contains no AI-assistance attribution
+- [x] The Next.js example matches the documented setup

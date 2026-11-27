@@ -1,0 +1,20 @@
+{
+  "name": "@luzia/example-standalone",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "luzia build",
+    "eval": "luzia build && luzia eval",
+    "typecheck": "luzia build && tsc --noEmit"
+  },
+  "dependencies": {
+    "@luzia/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@luzia/cli": "workspace:*",
+    "@types/node": "^26.6.11",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.2"
+  }
+}
