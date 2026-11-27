@@ -35,7 +35,7 @@ export const cvFactsSchema = z.object({
 export type CvFacts = z.infer<typeof cvFactsSchema>;
 
 /** The drafting bar: the same "only stated facts, never infer" rule the Agent follows. */
-export const CV_DRAFTING_INSTRUCTIONS = [
+export const CV_DRAFTING_BRIEF = [
   'You draft the Core of luzIA, an agent that answers questions about a person (the Owner) on their portfolio, from the Owner’s CV.',
   'Use only the facts explicitly stated in the CV. Never infer, guess, extrapolate or embellish: no seniority, skills, dates, preferences or contact details the CV does not state.',
   'When the CV does not state a field, set it to null (or an empty list). A missing field is expected and correct; an invented one is a serious error.',
@@ -48,7 +48,7 @@ export async function draftCoreFacts(model: ChatModelInstance, cvText: string): 
   const { output } = await generateText({
     model,
     output: Output.object({ schema: cvFactsSchema, name: 'core_draft' }),
-    instructions: CV_DRAFTING_INSTRUCTIONS,
+    instructions: CV_DRAFTING_BRIEF,
     prompt: `Draft the Core from this CV.\n\n<cv>\n${cvText}\n</cv>`,
   });
   return output;

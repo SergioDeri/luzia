@@ -127,7 +127,7 @@ const copySchema = z.object({
   suggestedQuestions: z
     .array(z.string().min(1))
     .length(3)
-    .describe('Three short questions a recruiter might ask, each answerable from the Core.'),
+    .describe('Three short questions a Visitor to the portfolio (often a recruiter, but never assume so) might ask, each answerable from the Core.'),
 });
 
 /** Asks the chat model for a greeting and three suggested questions that fit the Core. */
@@ -135,7 +135,7 @@ export async function proposeWidgetCopy(model: ChatModelInstance, coreText: stri
   const { output } = await generateText({
     model,
     output: Output.object({ schema: copySchema, name: 'widget_copy' }),
-    instructions: COPY_INSTRUCTIONS,
+    instructions: WIDGET_COPY_BRIEF,
     prompt: `The Owner’s Core:\n\n${coreText}`,
   });
   return {
@@ -144,8 +144,8 @@ export async function proposeWidgetCopy(model: ChatModelInstance, coreText: stri
   };
 }
 
-const COPY_INSTRUCTIONS = [
+const WIDGET_COPY_BRIEF = [
   'You write the opening text of luzIA, a chat widget on a person’s (the Owner’s) portfolio where an AI agent answers Visitors’ questions about the Owner.',
-  'Write a short, friendly greeting that says it is an AI agent answering questions about the Owner (by first name), and three short questions a recruiter would ask.',
+  'Write a short, friendly greeting that says it is an AI agent answering questions about the Owner (by first name), and three short questions a Visitor to the portfolio would likely ask.',
   'Every question must be answerable from the Core you are given. Do not invent facts. Write in the language of the Core.',
 ].join('\n');
