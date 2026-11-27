@@ -9,6 +9,7 @@ export default function Home() {
         endpoint="/api/luzia"
         contact="jamie.rivera@example.com"
         theme="auto"
+        avatar="/luzia-avatar.png"
         greeting="Hi! I'm luzIA, an AI agent that answers questions about Jamie. What would you like to know?"
         suggestedQuestions={[
           'What role is Jamie looking for?',
