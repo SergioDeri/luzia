@@ -4,9 +4,11 @@
 
 **Blocked by:** 01 — Tracer bullet: Core-only chat end to end over HTTP
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The prompt sent to the model encodes every rule listed above (verified at Seam 1 via the fake model)
-- [ ] Instructions are presented to the model as behavioural guidance, distinct from Knowledge Base facts
-- [ ] Contact details used in "I don't know" replies come from the Core
+- [x] The prompt sent to the model encodes every rule listed above (verified at Seam 1 via the fake model)
+- [x] Instructions are presented to the model as behavioural guidance, distinct from Knowledge Base facts
+- [x] Contact details used in "I don't know" replies come from the Core
 - [ ] Manual check against a real model in the Next.js example: a question with no supporting fact gets a decline plus contact, a question in English gets an English reply from a Spanish Knowledge Base, and an off-topic request is refused
+
+_Note: the manual check against a real model is not done yet (no API key was available when this ticket was implemented); it stays unticked until someone runs it._
