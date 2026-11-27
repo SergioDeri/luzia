@@ -28,6 +28,6 @@ export type { ScoredChunk, VectorStore } from './retrieval/vector-store.ts';
 export { DEFAULT_TOP_K } from './retrieval/retriever.ts';
 export type { RetrievalOptions } from './retrieval/retriever.ts';
 export type { LuziaErrorBody, LuziaErrorCode } from './http.ts';
-export { ALLOWED_ORIGINS_ENV, DEFAULT_LIMITS, LIMIT_ENV } from './protection/index.ts';
+export { ALLOWED_ORIGINS_ENV, DEFAULT_LIMITS, LIMIT_ENV, REPLY_CHARS_PER_TOKEN } from './protection/index.ts';
 export type { LuziaLimits, ProtectionConfig } from './protection/index.ts';
 export { KnowledgeBaseError, LuziaConfigError } from './errors.ts';

@@ -197,7 +197,14 @@ describe('limits', () => {
 
   it('reads limits from the environment', async () => {
     const { handler, chat } = setup(
-      { env: { LUZIA_MAX_MESSAGES: '1', LUZIA_MAX_MESSAGE_LENGTH: '50', LUZIA_MAX_OUTPUT_TOKENS: '80' } },
+      {
+        env: {
+          LUZIA_MAX_MESSAGES: '1',
+          LUZIA_MAX_MESSAGE_LENGTH: '50',
+          LUZIA_MAX_OUTPUT_TOKENS: '80',
+          LUZIA_MAX_REQUEST_BYTES: '400',
+        },
+      },
       ['ok'],
     );
 
@@ -205,6 +212,111 @@ describe('limits', () => {
     expect(chat.model.doStreamCalls[0]?.maxOutputTokens).toBe(80);
     expect((await handler(chatRequest(conversation(2)))).status).toBe(429);
     expect((await handler(chatRequest([{ role: 'user', content: 'a'.repeat(51) }]))).status).toBe(413);
+    expect(await (await handler(chatRequest([{ role: 'user', content: 'a'.repeat(400) }]))).json()).toMatchObject({
+      error: { code: 'request_too_large' },
+    });
+  });
+
+  it('rejects an Agent reply in the conversation longer than the maximum reply length', async () => {
+    const { handler, chat } = setup({ limits: { maxReplyLength: 20 } }, ['ok']);
+    const withReply = (reply: string) => [
+      { role: 'user' as const, content: 'Who is Ada?' },
+      { role: 'assistant' as const, content: reply },
+      { role: 'user' as const, content: 'And?' },
+    ];
+
+    expect((await handler(chatRequest(withReply('a'.repeat(20))))).status).toBe(200);
+    const response = await handler(chatRequest(withReply('a'.repeat(21))));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({ error: { code: 'message_too_long' } });
+    expect(chat.prompts).toHaveLength(1);
+  });
+
+  it('reads the maximum reply length from the environment', async () => {
+    const { handler } = setup({ env: { LUZIA_MAX_REPLY_LENGTH: '30' } }, ['ok']);
+    const withReply = [
+      { role: 'user' as const, content: 'Hi' },
+      { role: 'assistant' as const, content: 'a'.repeat(31) },
+      { role: 'user' as const, content: 'Hi' },
+    ];
+
+    expect(await (await handler(chatRequest(withReply))).json()).toMatchObject({ error: { code: 'message_too_long' } });
+  });
+
+  it('allows Agent replies of up to 8 characters per output token by default', async () => {
+    const reply = (length: number) => [
+      { role: 'user' as const, content: 'Who is Ada?' },
+      { role: 'assistant' as const, content: 'a'.repeat(length) },
+      { role: 'user' as const, content: 'And?' },
+    ];
+    const byDefault = setup({}, ['ok']).handler;
+    const fewerTokens = setup({ limits: { maxOutputTokens: 100 } }, ['ok']).handler;
+
+    expect((await byDefault(chatRequest(reply(4800)))).status).toBe(200);
+    expect((await byDefault(chatRequest(reply(4801)))).status).toBe(413);
+    expect((await fewerTokens(chatRequest(reply(800)))).status).toBe(200);
+    expect((await fewerTokens(chatRequest(reply(801)))).status).toBe(413);
+  });
+
+  it('counts every message, not only Visitor ones, towards the conversation limit', async () => {
+    const { handler, chat } = setup({ limits: { maxMessages: 2 } }, ['ok']);
+    const padded = [
+      { role: 'assistant' as const, content: 'Hi' },
+      { role: 'assistant' as const, content: 'Hi' },
+      { role: 'assistant' as const, content: 'Hi' },
+      { role: 'user' as const, content: 'Who is Ada?' },
+    ];
+
+    expect((await handler(chatRequest(conversation(2)))).status).toBe(200);
+    const response = await handler(chatRequest(padded));
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({ error: { code: 'conversation_limit_reached' } });
+    expect(chat.prompts).toHaveLength(1);
+  });
+
+  it('rejects a request body larger than the maximum before reading it as JSON', async () => {
+    const { handler, chat } = setup({ limits: { maxRequestBytes: 200 } }, ['ok']);
+
+    expect((await handler(chatRequest(question))).status).toBe(200);
+    const response = await handler(chatRequest([{ role: 'user', content: 'a'.repeat(300) }]));
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({ error: { code: 'request_too_large' } });
+    expect(chat.prompts).toHaveLength(1);
+  });
+
+  it('rejects an oversized body even when it does not declare its length', async () => {
+    const { handler } = setup({ limits: { maxRequestBytes: 200 } }, ['ok']);
+    const body = new TextEncoder().encode(JSON.stringify({ messages: [{ role: 'user', content: 'a'.repeat(300) }] }));
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(body.slice(0, 100));
+        controller.enqueue(body.slice(100));
+        controller.close();
+      },
+    });
+
+    const response = await handler(
+      new Request('https://portfolio.example/api/luzia', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: stream,
+        duplex: 'half',
+      } as RequestInit),
+    );
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({ error: { code: 'request_too_large' } });
+  });
+
+  it('allows request bodies of up to 512 KiB by default', async () => {
+    const { handler } = setup({ limits: { maxMessageLength: 600_000 } }, ['ok']);
+    const overhead = JSON.stringify({ messages: [{ role: 'user', content: '' }] }).length;
+
+    expect((await handler(chatRequest([{ role: 'user', content: 'a'.repeat(512 * 1024 - overhead) }]))).status).toBe(200);
+    expect((await handler(chatRequest([{ role: 'user', content: 'a'.repeat(512 * 1024 - overhead + 1) }]))).status).toBe(413);
   });
 
   it('returns limit errors with CORS headers to an allowed origin', async () => {
@@ -220,6 +332,8 @@ describe('limits', () => {
     [{ limits: { maxMessages: 0 } }, /limits\.maxMessages/],
     [{ limits: { maxOutputTokens: 1.5 } }, /limits\.maxOutputTokens/],
     [{ env: { LUZIA_MAX_MESSAGE_LENGTH: 'lots' } }, /LUZIA_MAX_MESSAGE_LENGTH/],
+    [{ limits: { maxReplyLength: -1 } }, /limits\.maxReplyLength/],
+    [{ env: { LUZIA_MAX_REQUEST_BYTES: '1e3x' } }, /LUZIA_MAX_REQUEST_BYTES/],
   ] as const)('fails at startup on an invalid limit (%o)', (config, message) => {
     expect(() => setup(config)).toThrow(message);
   });

@@ -73,7 +73,9 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
       return errorResponse(405, 'method_not_allowed', 'Use POST to chat with luzIA.', { allow: 'POST' });
     }
 
-    const body = chatRequestBodySchema.safeParse(await request.json().catch(() => undefined));
+    const text = await protection.readBody(request);
+    if (text instanceof Response) return text;
+    const body = chatRequestBodySchema.safeParse(parseJson(text));
     if (!body.success) {
       return errorResponse(400, 'invalid_request', 'Expected a JSON body like { "messages": [{ "role": "user", "content": "..." }] }.');
     }
@@ -94,4 +96,12 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
 
     return replyResponse(result.fullStream);
   });
+}
+
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }

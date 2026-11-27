@@ -3,10 +3,11 @@ import { errorResponse } from '../http.ts';
 import { preflightResponse, withCorsHeaders } from './cors.ts';
 import { ALLOWED_ORIGINS_ENV, checkOrigin, resolveAllowedOrigins } from './origins.ts';
 
-import { checkLimits, resolveLimits, type LuziaLimits } from './limits.ts';
+import { checkLimits, readBodyWithinLimit, resolveLimits } from './limits.ts';
 
 export { ALLOWED_ORIGINS_ENV } from './origins.ts';
-export { DEFAULT_LIMITS, LIMIT_ENV, type LuziaLimits } from './limits.ts';
+export { DEFAULT_LIMITS, LIMIT_ENV, REPLY_CHARS_PER_TOKEN, type LuziaLimits } from './limits.ts';
+import type { LuziaLimits } from './limits.ts';
 
 export interface ProtectionConfig {
   /**
@@ -17,9 +18,9 @@ export interface ProtectionConfig {
    */
   allowedOrigins?: string[];
   /**
-   * Per-conversation limits. Each one omitted is read from its environment
-   * variable (LUZIA_MAX_MESSAGES, LUZIA_MAX_MESSAGE_LENGTH,
-   * LUZIA_MAX_OUTPUT_TOKENS), else falls back to {@link DEFAULT_LIMITS}.
+   * Per-conversation and per-request limits. Each one omitted is read from its
+   * environment variable (see {@link LIMIT_ENV}), else falls back to
+   * {@link DEFAULT_LIMITS}.
    */
   limits?: Partial<LuziaLimits>;
 }
@@ -37,6 +38,8 @@ export function createProtection(config: ProtectionConfig, env: Env) {
 
   return {
     limits,
+    /** The request body as text, or the `request_too_large` error response when it exceeds `maxRequestBytes`. */
+    readBody: (request: Request) => readBodyWithinLimit(request, limits.maxRequestBytes),
     /** The limit error response when the conversation exceeds a limit, else `null`. */
     checkLimits: (messages: readonly { role: string; content: string }[]) => checkLimits(messages, limits),
 
