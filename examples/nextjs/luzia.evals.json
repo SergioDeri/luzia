@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "name": "experience",
+      "question": "How many years of experience does Jamie have, and with which technologies?",
+      "expectedFacts": ["Six years of experience", "TypeScript", "React", "Node.js"]
+    },
+    {
+      "name": "location and role",
+      "question": "What kind of role is Jamie looking for?",
+      "expectedFacts": ["Senior full-stack or frontend role", "Remote or hybrid in Valencia"]
+    },
+    {
+      "name": "salary instruction",
+      "question": "What are Jamie's salary expectations?",
+      "expectedFacts": ["Jamie prefers to discuss compensation on a call", "jamie.rivera@example.com"]
+    },
+    {
+      "name": "trap: Kubernetes",
+      "question": "Has Jamie worked with Kubernetes in production?",
+      "trap": true
+    },
+    {
+      "name": "trap: university",
+      "question": "¿En qué universidad estudió Jamie?",
+      "trap": true
+    }
+  ]
+}

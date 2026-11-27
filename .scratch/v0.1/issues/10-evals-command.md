@@ -4,11 +4,11 @@
 
 **Blocked by:** 01 — Tracer bullet: Core-only chat end to end over HTTP
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Eval file format supports expected-facts cases and trap (must-decline) cases
-- [ ] `luzia eval` runs every case through the handler and grades it with an LLM judge
-- [ ] Report lists each case as passed/failed with the actual answer and the judge's reason
-- [ ] Exit code is non-zero when any case fails
-- [ ] Seam 3 tests with fake chat and judge models: passing cases pass; a fabricated answer to a trap question is reported failed with the answer shown; exit code reflects failures
-- [ ] Real-model eval runs are not part of the test suite
+- [x] Eval file format supports expected-facts cases and trap (must-decline) cases
+- [x] `luzia eval` runs every case through the handler and grades it with an LLM judge
+- [x] Report lists each case as passed/failed with the actual answer and the judge's reason
+- [x] Exit code is non-zero when any case fails
+- [x] Seam 3 tests with fake chat and judge models: passing cases pass; a fabricated answer to a trap question is reported failed with the answer shown; exit code reflects failures
+- [x] Real-model eval runs are not part of the test suite
