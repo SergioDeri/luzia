@@ -118,7 +118,8 @@ export const styles = `
   .stage {
     flex: none;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
     padding: 0.75rem 1rem 0;
     border-bottom: 1px solid var(--luzia-border);
   }
@@ -137,8 +138,7 @@ export const styles = `
     transition: filter 0.2s ease;
   }
   .avatar svg { aspect-ratio: 1; margin-bottom: 0.75rem; height: calc(100% - 0.75rem); }
-  /* While luzIA is saying a reply, she steps to the left and the speech bubble takes the right side. */
-  .stage[data-saying] { justify-content: flex-start; gap: 0.75rem; }
+  /* luzIA stays on the left; her speech bubble appears on the right without moving her. */
   .speech {
     position: relative;
     flex: 1;
