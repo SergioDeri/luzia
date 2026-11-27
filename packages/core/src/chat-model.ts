@@ -1,5 +1,6 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogle } from '@ai-sdk/google';
+import { createGroq } from '@ai-sdk/groq';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 import type { Env } from './env.ts';
@@ -16,6 +17,7 @@ export const CHAT_PROVIDERS = {
     apiKeyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
     create: (apiKey: string, model: string) => createGoogle({ apiKey })(model),
   },
+  groq: { apiKeyEnv: 'GROQ_API_KEY', create: (apiKey: string, model: string) => createGroq({ apiKey })(model) },
 } as const;
 
 export type ChatProvider = keyof typeof CHAT_PROVIDERS;

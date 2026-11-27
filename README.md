@@ -280,7 +280,7 @@ luzIA uses the [Vercel AI SDK](https://ai-sdk.dev), and you choose two models in
 
 | | Providers | API key variable |
 | --- | --- | --- |
-| Chat (`LUZIA_CHAT_PROVIDER`) | `anthropic`, `openai`, `google` | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` |
+| Chat (`LUZIA_CHAT_PROVIDER`) | `anthropic`, `openai`, `google`, `groq` | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GROQ_API_KEY` |
 | Embeddings (`LUZIA_EMBEDDING_PROVIDER`) | `openai`, `google` | `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` |
 
 The model id (`LUZIA_CHAT_MODEL`, `LUZIA_EMBEDDING_MODEL`) is any model the provider offers, e.g. `claude-sonnet-5-5` for chat or `text-embedding-3-small` for OpenAI embeddings.
@@ -321,11 +321,12 @@ All are read on the server only. `luzia build` and `luzia eval` read them too, a
 
 | Variable | Default | Used by | Purpose |
 | --- | --- | --- | --- |
-| `LUZIA_CHAT_PROVIDER` | (required) | server, eval | `anthropic`, `openai` or `google` |
+| `LUZIA_CHAT_PROVIDER` | (required) | server, eval | `anthropic`, `openai`, `google` or `groq` |
 | `LUZIA_CHAT_MODEL` | (required) | server, eval | Chat model id, e.g. `claude-sonnet-5-5` |
 | `ANTHROPIC_API_KEY` | | server, eval | Key for the `anthropic` chat provider |
 | `OPENAI_API_KEY` | | server, build, eval | Key for the `openai` chat or embeddings provider |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | | server, build, eval | Key for the `google` chat or embeddings provider |
+| `GROQ_API_KEY` | | server, eval | Key for the `groq` chat provider (chat only; Groq has no embeddings) |
 | `LUZIA_EMBEDDING_PROVIDER` | (none) | build, server, eval | `openai` or `google`. Required once the Knowledge Base has retrievable content |
 | `LUZIA_EMBEDDING_MODEL` | (none) | build, server, eval | Embeddings model id, e.g. `text-embedding-3-small`. Set together with the provider |
 | `LUZIA_ALLOWED_ORIGINS` | (none: same origin only) | server | Comma-separated origins allowed to call the server from another site |

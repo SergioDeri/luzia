@@ -10,6 +10,7 @@ describe('handler configuration', () => {
     ['anthropic', 'ANTHROPIC_API_KEY'],
     ['openai', 'OPENAI_API_KEY'],
     ['google', 'GOOGLE_GENERATIVE_AI_API_KEY'],
+    ['groq', 'GROQ_API_KEY'],
   ] as const)('fails at startup when the %s API key is missing', (provider, envVar) => {
     const create = () => createLuziaHandler({ knowledgeBase, chat: { provider, model: 'some-model' }, env: {} });
 
@@ -25,6 +26,12 @@ describe('handler configuration', () => {
     });
 
     expect(handler).toBeTypeOf('function');
+  });
+
+  it('starts with Groq as the chat provider when its key is in the environment', () => {
+    const env = { LUZIA_CHAT_PROVIDER: 'groq', LUZIA_CHAT_MODEL: 'openai/gpt-oss-120b', GROQ_API_KEY: 'test-key' };
+
+    expect(createLuziaHandler({ knowledgeBase, env })).toBeTypeOf('function');
   });
 
   it('reads the chat provider and model from the environment when not configured', () => {
