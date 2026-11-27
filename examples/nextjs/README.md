@@ -1,6 +1,6 @@
 # luzIA example: Next.js on Vercel
 
-A Next.js portfolio with luzIA mounted as a route and the widget on the home page. See the [root README](../../README.md#quick-start-nextjs-on-vercel) for the full walkthrough.
+A Next.js portfolio with luzIA mounted as a route and the widget on the home page. See the [root README](../../README.md#manual-setup-nextjs-on-vercel) for the full walkthrough.
 
 ```
 app/api/luzia/route.ts   the handler: POST (chat) and OPTIONS (CORS preflight)

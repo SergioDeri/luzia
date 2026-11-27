@@ -9,21 +9,24 @@ The Agent always presents itself as "luzIA". It speaks about the Owner in the th
 | Package | What it is |
 | --- | --- |
 | [`@luzia/core`](packages/core) | Server handler (Web `Request` in, streamed `Response` out) and Knowledge Base compiler |
-| [`@luzia/cli`](packages/cli) | `luzia build` (compile the Knowledge Base) and `luzia eval` (check the Agent's answers) |
+| [`@luzia/cli`](packages/cli) | `luzia init` (setup wizard), `luzia build` (compile the Knowledge Base) and `luzia eval` (check the Agent's answers) |
 | [`@luzia/widget`](packages/widget) | `<luzia-widget>` Web Component, also shipped as a single script bundle |
 | [`@luzia/react`](packages/react) | `<LuziaWidget>` React wrapper over the widget |
 
-There are two ways to set it up, both documented here for Vercel:
+The quickest way to set it up is **[`npx luzia init`](#quick-start-npx-luzia-init)**, run in your portfolio project. It covers both kinds of portfolio:
 
-- **[Next.js on Vercel](#quick-start-nextjs-on-vercel)**: the handler is a route in your Next.js portfolio. Same origin, no CORS setup.
-- **[Standalone server and a script tag](#quick-start-standalone-server-and-a-script-tag)**: for static portfolios (GitHub Pages, plain HTML, any framework). The handler is deployed on its own as a Vercel Function, and your site loads the widget with a `<script>` tag.
+- **Next.js**: the handler is a route in your Next.js portfolio. Same origin, no CORS setup.
+- **Static portfolios** (GitHub Pages, plain HTML, any other framework): the handler is deployed on its own as a Vercel Function, and your site loads the widget with a `<script>` tag.
 
-Working examples: [`examples/nextjs`](examples/nextjs) and [`examples/standalone`](examples/standalone).
+If you prefer to do it by hand, the [manual setup](#manual-setup) covers both, for Vercel. Working examples: [`examples/nextjs`](examples/nextjs) and [`examples/standalone`](examples/standalone).
 
 ## Contents
 
-- [Quick start: Next.js on Vercel](#quick-start-nextjs-on-vercel)
-- [Quick start: standalone server and a script tag](#quick-start-standalone-server-and-a-script-tag)
+- [Quick start: `npx luzia init`](#quick-start-npx-luzia-init)
+- [Where your data and keys live](#where-your-data-and-keys-live)
+- [Manual setup](#manual-setup)
+  - [Next.js on Vercel](#manual-setup-nextjs-on-vercel)
+  - [Standalone server and a script tag](#manual-setup-standalone-server-and-a-script-tag)
 - [Knowledge Base](#knowledge-base)
 - [Chat and embeddings models](#chat-and-embeddings-models)
 - [Environment variables](#environment-variables)
@@ -36,7 +39,45 @@ Working examples: [`examples/nextjs`](examples/nextjs) and [`examples/standalone
 - [Architecture](#architecture)
 - [Developing luzIA](#developing-luzia)
 
-## Quick start: Next.js on Vercel
+## Quick start: `npx luzia init`
+
+Run the setup wizard in your portfolio project, in a terminal. It asks questions as it goes, so it needs an interactive terminal; from a script or CI job it stops with an error instead of waiting.
+
+```sh
+cd my-portfolio
+npx luzia init
+```
+
+It works out what kind of project it is in:
+
+- **A Next.js app** (a `next` dependency and an `app/` or `src/app/` folder): luzIA is added to the app in place, with a server route at `/api/luzia` and the widget in your root layout.
+- **Anything else** (a static portfolio, or an empty folder): the folder is set up as a standalone luzIA server to deploy on Vercel, and the wizard prints the `<script>` snippet to paste into your portfolio's HTML.
+
+Then it walks you through:
+
+1. **Models and keys**: the chat provider and model, the embeddings provider and model (OpenAI or Google), and their API keys, saved to `.env.local`.
+2. **Core**: drafted from your CV PDF with your chat model (only after you agree to send the CV's text to that provider), or written from a few questions with no model call. You see the full Core and accept it, edit it, or redo it.
+3. **Instructions**: how the Agent handles salary, availability, relocation and anything else you add.
+4. **Widget**: the greeting, three suggested questions, the theme and the mode (bubble or inline).
+5. **Integration**: for Next.js, the packages, the server route, the widget in the root layout and `luzia build` before your `dev` and `build` scripts; for a static portfolio, the server files, your portfolio's domains as allowed origins, and the widget snippet.
+6. **Build**: runs `luzia build` and shows what it compiled.
+7. **Production variables**: uploads the variables to your Vercel project with `vercel env add` when the folder is linked to one, or lists the names to set in your hosting provider's settings.
+
+Nothing in your project changes without your say-so: every file it creates or updates (with a diff for existing files) and every command it runs is shown first and needs your confirmation. It ends with a summary of what changed, anything left to do by hand, and next steps. Run it again later to change one part of the setup at a time. The [CLI README](packages/cli/README.md#luzia-init) describes every step in detail.
+
+## Where your data and keys live
+
+luzIA has no hosted service and no database. Everything stays with you:
+
+- **Your Knowledge Base is files in your own repo** (`knowledge-base/`: Core, Instructions, your CV and any other files). The Agent may share anything in it with Visitors, and **if the repo is public, anyone can read those files there too**. Use a private repo, or leave sensitive details out of the Knowledge Base and use Instructions to say how the Agent should handle the topic (for example, "suggest discussing salary on a call").
+- **Your API keys live only in `.env.local`** on your machine (`luzia init` makes sure it is git-ignored and never prints the keys back) **and in your hosting provider's environment variables** in production. They are read on the server only and never reach the browser.
+- **Your CV's text is sent to the chat provider you chose**, and only when you ask `luzia init` to draft your Core from it and agree to send it. Once the Agent is running, your chosen providers do the work they are there for: `luzia build` sends the retrievable Knowledge Base content to your embeddings provider, and each Visitor question goes to your embeddings provider (to search) and your chat provider (with the Core, Instructions and the relevant parts of the Knowledge Base, to answer). Nothing is sent anywhere else.
+
+## Manual setup
+
+The same setup by hand, for Vercel.
+
+### Manual setup: Next.js on Vercel
 
 This mirrors [`examples/nextjs`](examples/nextjs).
 
@@ -125,7 +166,7 @@ Run `pnpm dev` and open the luzIA bubble in the corner.
 
 From then on, editing the Knowledge Base is commit, push, and Vercel redeploys with the recompiled Knowledge Base.
 
-## Quick start: standalone server and a script tag
+### Manual setup: standalone server and a script tag
 
 For a static portfolio, deploy the handler on its own as a Vercel Function and embed the widget with a script tag. This mirrors [`examples/standalone`](examples/standalone).
 
@@ -285,7 +326,7 @@ luzIA uses the [Vercel AI SDK](https://ai-sdk.dev), and you choose two models in
 
 The model id (`LUZIA_CHAT_MODEL`, `LUZIA_EMBEDDING_MODEL`) is any model the provider offers, e.g. `claude-sonnet-5-5` for chat or `text-embedding-3-small` for OpenAI embeddings.
 
-**Using Claude for chat needs a second key.** Anthropic has no embeddings API, so if you chat with Claude and your Knowledge Base has retrievable content (anything besides Core and Instructions), you also need an OpenAI or Google key for embeddings:
+**Chatting with Claude or a Groq model needs a second key.** Anthropic and Groq have no embeddings API, so if you chat with one of them and your Knowledge Base has retrievable content (anything besides Core and Instructions), you also need an OpenAI or Google key for embeddings (`luzia init` always asks for one):
 
 ```sh
 LUZIA_CHAT_PROVIDER=anthropic

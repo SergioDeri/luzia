@@ -1,6 +1,6 @@
 # luzIA example: standalone server and a script tag
 
-The luzIA handler deployed on its own as a Vercel Function, for an Owner whose portfolio is a static site. See the [root README](../../README.md#quick-start-standalone-server-and-a-script-tag) for the full walkthrough.
+The luzIA handler deployed on its own as a Vercel Function, for an Owner whose portfolio is a static site. See the [root README](../../README.md#manual-setup-standalone-server-and-a-script-tag) for the full walkthrough.
 
 ```
 api/luzia.ts             Vercel Function: POST (chat) and OPTIONS (CORS preflight)
