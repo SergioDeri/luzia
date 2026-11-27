@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -10,12 +10,14 @@ import {
   fakeEmbeddingModel,
   fakeRunner,
   instructionsAnswers,
+  integrationAnswers,
   modelAnswers,
   productionAnswers,
   widgetAnswers,
   readProjectFile,
   runInit,
   rerunAnswers,
+  standaloneAnswers,
   unusedChatModel,
 } from './support/init-harness.ts';
 
@@ -470,6 +472,55 @@ export default function RootLayout({ children }) {
       expect(snippet).toContain('suggested-questions="[&quot;What has Jamie shipped?&quot;');
       expect(snippet).toContain('mode="bubble"');
       expect(run.stdout).not.toContain('YOUR-LUZIA-SERVER');
+    });
+  });
+
+  describe('partial setup: a Core without the integration', () => {
+    it('on Next.js, offers to set up the integration and adds the route, the widget and the scripts', async () => {
+      const cwd = await existingSetupProject({}, { integration: false });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['integration', [...widgetAnswers({ theme: 'dark' }), ...integrationAnswers()]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Route: not found/);
+      const menus = run.asked.filter((asked) => /What do you want to change/.test(asked.message));
+      expect(menus[0]?.options).toEqual(['integration', 'models', 'core', 'instructions', 'widget', 'production', 'done']);
+      expect(menus[0]?.initialValue).toBe('integration');
+      // Once set up, the entry is gone.
+      expect(menus[1]?.options).not.toContain('integration');
+
+      expect(await readProjectFile(cwd, 'app/api/luzia/route.ts')).toContain('createLuziaHandler');
+      const layout = await readProjectFile(cwd, 'app/layout.tsx');
+      expect(layout).toContain('contact="hello@jamie.dev"');
+      expect(layout).toContain('theme="dark"');
+      const packageJson = JSON.parse(await readProjectFile(cwd, 'package.json'));
+      expect(packageJson.scripts.dev).toMatch(/^luzia build && /);
+      expect(run.commands).toEqual(['pnpm add @luzia/core @luzia/react', 'pnpm add -D @luzia/cli']);
+    });
+
+    it('on a standalone folder, offers to set up the server, then builds the missing Knowledge Base', async () => {
+      const cwd = await existingStandaloneProject({}, { server: false });
+      await rm(path.join(cwd, '.luzia'), { recursive: true });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['integration', [...widgetAnswers(), ...standaloneAnswers()]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Server: not set up yet/);
+      const menus = run.asked.filter((asked) => /What do you want to change/.test(asked.message));
+      expect(menus[0]?.options).toEqual(['integration', 'models', 'core', 'instructions', 'widget', 'production', 'done']);
+      // Once the server exists, its allowed origins can be changed instead.
+      expect(menus[1]?.options).toEqual(['models', 'core', 'instructions', 'widget', 'origins', 'production', 'done']);
+
+      expect(await readProjectFile(cwd, 'api/luzia.ts')).toContain(
+        "allowedOrigins: ['https://jamie.example.com', 'https://www.jamie.example.com']",
+      );
+      expect(run.stdout).toContain('<luzia-widget');
+      expect(run.stdout).toContain('contact="hello@jamie.dev"');
+      expect(JSON.parse(await readProjectFile(cwd, '.luzia/knowledge-base.json')).core.text).toContain('hello@jamie.dev');
     });
   });
 });

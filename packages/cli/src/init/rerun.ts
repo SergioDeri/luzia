@@ -1,17 +1,19 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { CHAT_PROVIDERS, EMBEDDING_MODEL_ENV, EMBEDDING_PROVIDER_ENV, EMBEDDING_PROVIDERS } from '@luzia/core';
 import type { WizardContext } from './context.ts';
-import { useExistingSetup, type ExistingSetup } from './existing-setup.ts';
+import { readExistingSetup, useExistingSetup, type ExistingSetup } from './existing-setup.ts';
 import type { WizardStep } from './step.ts';
-import { buildStep } from './steps/build.ts';
+import { ARTIFACT_PATH, buildStep } from './steps/build.ts';
 import { coreStep, KNOWLEDGE_BASE_DIR } from './steps/core.ts';
 import { instructionsStep } from './steps/instructions.ts';
 import { ENV_FILE, modelsStep } from './steps/models.ts';
-import { nextjsWidgetStep } from './steps/nextjs.ts';
+import { nextjsStep, nextjsWidgetStep } from './steps/nextjs.ts';
 import { productionStep } from './steps/production.ts';
-import { standaloneOriginsStep, standaloneWidgetStep } from './steps/standalone.ts';
+import { standaloneOriginsStep, standaloneStep, standaloneWidgetStep } from './steps/standalone.ts';
 import { widgetStep } from './steps/widget.ts';
 
-type SectionId = 'models' | 'core' | 'instructions' | 'widget' | 'origins' | 'production';
+type SectionId = 'integration' | 'models' | 'core' | 'instructions' | 'widget' | 'origins' | 'production';
 
 /** One entry of the re-run menu: the steps it runs, and nothing else. */
 interface Section {
@@ -20,9 +22,14 @@ interface Section {
   steps: WizardStep[];
 }
 
-/** The menu for this project: the allowed origins only for a standalone server that exists. */
-function sectionsFor(setup: ExistingSetup): Section[] {
+/**
+ * The menu for this project: setting up the integration first when it is
+ * missing (no route on Next.js, no server on a standalone folder), and the
+ * allowed origins only for a standalone server that exists.
+ */
+function sectionsFor(context: WizardContext, setup: ExistingSetup): Section[] {
   return [
+    ...(integrationMissing(context, setup) ? [{ id: 'integration' as const, label: 'Set up the integration', steps: INTEGRATION_STEPS }] : []),
     { id: 'models', label: 'Models and keys', steps: [modelsStep] },
     { id: 'core', label: 'Core', steps: [coreStep] },
     { id: 'instructions', label: 'Instructions', steps: [instructionsStep] },
@@ -30,6 +37,22 @@ function sectionsFor(setup: ExistingSetup): Section[] {
     ...(setup.server ? [{ id: 'origins' as const, label: 'Allowed origins of the server', steps: [standaloneOriginsStep] }] : []),
     { id: 'production', label: 'Production variables', steps: [productionStep] },
   ];
+}
+
+/**
+ * The integration steps of the first run: the widget options first when none
+ * could be read back (the integration puts them in the layout or the snippet),
+ * then the build when there is no compiled Knowledge Base yet.
+ */
+const INTEGRATION_STEPS: WizardStep[] = [
+  { ...widgetStep, id: 'widget-if-unset', applies: (context) => !context.state.widget },
+  nextjsStep,
+  standaloneStep,
+  { ...buildStep, id: 'build-if-missing', applies: (context) => !existsSync(path.join(context.cwd, ARTIFACT_PATH)) },
+];
+
+function integrationMissing(context: WizardContext, setup: ExistingSetup): boolean {
+  return context.state.project.kind === 'nextjs' ? setup.route === null : setup.server === null;
 }
 
 const DONE = 'done';
@@ -43,9 +66,10 @@ const DONE = 'done';
 export async function runRerunMenu(context: WizardContext, setup: ExistingSetup): Promise<void> {
   useExistingSetup(context, setup);
   printSetup(context, setup);
-  const sections = sectionsFor(setup);
+  let current = setup;
 
   for (;;) {
+    const sections = sectionsFor(context, current);
     context.say('');
     const choice = await context.prompter.select<SectionId | typeof DONE>({
       message: 'What do you want to change?',
@@ -53,10 +77,12 @@ export async function runRerunMenu(context: WizardContext, setup: ExistingSetup)
         ...sections.map((section) => ({ value: section.id, label: section.label })),
         { value: DONE, label: 'Nothing else, I’m done' },
       ],
-      initialValue: DONE,
+      initialValue: sections[0]?.id === 'integration' ? 'integration' : DONE,
     });
     if (choice === DONE) return;
     await runSection(context, sections.find((section) => section.id === choice)!);
+    // A section may have added the integration, which changes the menu.
+    current = (await readExistingSetup(context)) ?? current;
   }
 }
 

@@ -580,9 +580,19 @@ export const EXISTING_SETUP: Record<string, string> = {
   '.luzia/knowledge-base.json': '{"format":"stale","embeddingModel":"openai.embedding:text-embedding-3-small"}\n',
 };
 
-/** The Next.js fixture with an existing luzIA setup ({@link EXISTING_SETUP}), plus extra or replaced `files`. */
-export async function existingSetupProject(files: Record<string, string | Uint8Array> = {}): Promise<string> {
-  const cwd = await ownerProject('nextjs-app', { ...EXISTING_SETUP, ...files });
+/**
+ * The Next.js fixture with an existing luzIA setup ({@link EXISTING_SETUP}),
+ * plus extra or replaced `files`. `integration: false` leaves out the route,
+ * the widget in the layout and the scripts change (a partial setup: only the
+ * Knowledge Base and `.env.local`).
+ */
+export async function existingSetupProject(
+  files: Record<string, string | Uint8Array> = {},
+  options: { integration?: boolean } = {},
+): Promise<string> {
+  const setup = options.integration === false ? EXISTING_CONTENT : EXISTING_SETUP;
+  const cwd = await ownerProject('nextjs-app', { ...setup, ...files });
+  if (options.integration === false) return cwd;
   const packageJsonPath = path.join(cwd, 'package.json');
   const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
   packageJson.scripts = { ...packageJson.scripts, dev: 'luzia build && next dev', build: 'luzia build && next build' };
