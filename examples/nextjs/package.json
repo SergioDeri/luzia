@@ -1,5 +1,5 @@
 {
-  "name": "@luzia/example-nextjs",
+  "name": "luzia-example-nextjs",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,14 +11,14 @@
     "typecheck": "luzia build && tsc --noEmit"
   },
   "dependencies": {
-    "@luzia/core": "workspace:*",
-    "@luzia/react": "workspace:*",
+    "luzia-core": "workspace:*",
+    "luzia-react": "workspace:*",
     "next": "^16.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
-    "@luzia/cli": "workspace:*",
+    "luzia-cli": "workspace:*",
     "@types/node": "^26.6.11",
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",

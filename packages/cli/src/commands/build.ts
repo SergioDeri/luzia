@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { buildKnowledgeBaseWithReport, writeCompiledKnowledgeBase } from '@luzia/core';
+import { buildKnowledgeBaseWithReport, writeCompiledKnowledgeBase } from 'luzia-core';
 import type { CliCommand } from '../command.ts';
 
 export const DEFAULT_KNOWLEDGE_BASE_DIR = 'knowledge-base';

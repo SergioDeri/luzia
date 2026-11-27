@@ -92,7 +92,7 @@ async function prefixScripts(context: WizardContext): Promise<void> {
 }
 
 function installCommands(context: WizardContext): PlannedCommand[] {
-  return luziaInstallCommands(context.state.project.packageManager, ['@luzia/core', '@luzia/react']);
+  return luziaInstallCommands(context.state.project.packageManager, ['luzia-core', 'luzia-react']);
 }
 
 /** Where the server route lives in this project, e.g. `app/api/luzia/route.ts`. */
@@ -108,7 +108,7 @@ function routeFile(context: WizardContext): FileWrite {
   const artifactImport = path.posix.relative(routeDir(context.state.project), ARTIFACT_PATH);
   return {
     path: routePath(context.state.project),
-    content: `import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+    content: `import { createLuziaHandler, loadCompiledKnowledgeBase } from 'luzia-core';
 // Generated from knowledge-base/ by \`luzia build\`.
 import compiledKnowledgeBase from '${artifactImport}';
 

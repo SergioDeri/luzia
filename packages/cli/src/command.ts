@@ -1,4 +1,4 @@
-import type { ChatModelInstance, EmbeddingModelInstance } from '@luzia/core';
+import type { ChatModelInstance, EmbeddingModelInstance } from 'luzia-core';
 import type { CommandRunner } from './init/command-runner.ts';
 import type { Prompter } from './init/prompter.ts';
 

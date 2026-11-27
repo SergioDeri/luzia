@@ -1,4 +1,4 @@
-# @luzia/cli
+# luzia-cli
 
 The `luzia` command line.
 
@@ -20,7 +20,7 @@ luzia eval  [--file luzia.evals.json] [--kb .luzia/knowledge-base.json]
 npx luzia init
 ```
 
-`npx luzia` runs the `luzia` package, a shortcut to this CLI (`npx @luzia/cli init` works too). Once the wizard has installed `@luzia/cli` in your project, later runs use the local binary.
+`npx luzia` runs the `luzia` package, a shortcut to this CLI (`npx luzia-cli init` works too). Once the wizard has installed `luzia-cli` in your project, later runs use the local binary.
 
 Run it in your portfolio project. It takes you from nothing to a working Agent: models and keys, Core, Instructions, widget, the integration into your project, the first build and the production variables.
 
@@ -81,7 +81,7 @@ The Instructions are written from fixed templates, with no model call, shown in 
 
 **6a. Next.js integration.** Each change is shown and confirmed on its own:
 
-- installs `@luzia/core` and `@luzia/react`, and `@luzia/cli` as a dev dependency, with your package manager;
+- installs `luzia-core` and `luzia-react`, and `luzia-cli` as a dev dependency, with your package manager;
 - creates the server route `app/api/luzia/route.ts` (in `src/app/` if that is where your app is; `.js` in a JavaScript project), which reads the models and keys from the environment;
 - adds `.luzia/` (the compiled Knowledge Base) to `.gitignore`;
 - adds the `<LuziaWidget>` with your widget options to the root layout. If there is no root layout, or it can't be changed safely, the wizard prints the exact snippet to add yourself instead of guessing;
@@ -91,7 +91,7 @@ The Instructions are written from fixed templates, with no model call, shown in 
 
 - asks for your portfolio's domain(s), e.g. `jamie.example.com, www.jamie.example.com`, which become the **allowed origins** (bare domains get `https://`; `www.` and the bare domain are different origins, so list both if you use both);
 - asks for the server's URL once deployed. If you haven't deployed yet, leave it empty: the snippet uses the placeholder `https://YOUR-LUZIA-SERVER.vercel.app/api/luzia`, and the summary reminds you to replace it;
-- after one confirmation, writes `api/luzia.ts` (the Vercel Function, with your allowed origins), `package.json` (`"type": "module"` and `luzia build` as the build script), `vercel.json` (ships the compiled Knowledge Base with the function; merged into an existing one), a placeholder `public/index.html` and `.gitignore` entries, and installs `@luzia/core` and `@luzia/cli`;
+- after one confirmation, writes `api/luzia.ts` (the Vercel Function, with your allowed origins), `package.json` (`"type": "module"` and `luzia build` as the build script), `vercel.json` (ships the compiled Knowledge Base with the function; merged into an existing one), a placeholder `public/index.html` and `.gitignore` entries, and installs `luzia-core` and `luzia-cli`;
 - prints the snippet for your portfolio's HTML: the `<script>` tag for `<head>` and the `<luzia-widget>` with your options for `<body>`.
 
 Deploy the folder as its own Vercel project (framework preset: Other).

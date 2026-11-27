@@ -1,5 +1,5 @@
 {
-  "name": "@luzia/cli",
+  "name": "luzia-cli",
   "version": "0.1.0",
   "description": "luzIA command line: set up luzIA, compile a Knowledge Base and run evals",
   "license": "MIT",
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.9.0",
-    "@luzia/core": "workspace:^",
+    "luzia-core": "workspace:^",
     "ai": "^7.0.182",
     "zod": "^4.6.7"
   },

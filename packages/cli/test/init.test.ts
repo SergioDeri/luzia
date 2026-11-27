@@ -44,7 +44,7 @@ describe('luzia init', () => {
     expect(run.stdout).toMatch(/Next\.js.*pnpm/);
 
     // Packages installed with the project's package manager.
-    expect(run.commands).toEqual(['pnpm add @luzia/core @luzia/react', 'pnpm add -D @luzia/cli']);
+    expect(run.commands).toEqual(['pnpm add luzia-core luzia-react', 'pnpm add -D luzia-cli']);
 
     // Models and keys only in .env.local, which is git-ignored.
     const env = await readProjectFile(cwd, '.env.local');
@@ -70,7 +70,7 @@ describe('luzia init', () => {
 
     // The server route answers chat and CORS preflight from the compiled Knowledge Base.
     const route = await readProjectFile(cwd, 'app/api/luzia/route.ts');
-    expect(route).toContain("from '@luzia/core'");
+    expect(route).toContain("from 'luzia-core'");
     expect(route).toContain("import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json'");
     expect(route).toMatch(/export const POST = handler/);
     expect(route).toMatch(/export const OPTIONS = handler/);
@@ -179,7 +179,7 @@ describe('luzia init', () => {
 
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/Next\.js.*src\/app.*npm/);
-    expect(run.commands).toEqual(['npm install @luzia/core @luzia/react', 'npm install --save-dev @luzia/cli']);
+    expect(run.commands).toEqual(['npm install luzia-core luzia-react', 'npm install --save-dev luzia-cli']);
     const route = await readProjectFile(cwd, 'src/app/api/luzia/route.js');
     expect(route).toContain("import compiledKnowledgeBase from '../../../../.luzia/knowledge-base.json'");
     expect(run.stdout).toContain('npm run dev');
@@ -220,14 +220,14 @@ describe('luzia init', () => {
   it('tells the Owner how to install the packages themselves when the install fails', async () => {
     const cwd = await ownerProject('nextjs-app');
     const runner = fakeRunner((request) =>
-      request.args.includes('@luzia/cli') ? { exitCode: 1, stderr: 'ERR_PNPM_FETCH_404 @luzia/cli' } : {},
+      request.args.includes('luzia-cli') ? { exitCode: 1, stderr: 'ERR_PNPM_FETCH_404 luzia-cli' } : {},
     );
 
     const run = await runInit(cwd, { answers: fullRunAnswers(), runner });
 
-    expect(run.stderr).toMatch(/pnpm add -D @luzia\/cli failed[\s\S]*ERR_PNPM_FETCH_404/);
+    expect(run.stderr).toMatch(/pnpm add -D luzia-cli failed[\s\S]*ERR_PNPM_FETCH_404/);
     const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
-    expect(summary).toMatch(/Still to do:[\s\S]*pnpm add -D @luzia\/cli/);
+    expect(summary).toMatch(/Still to do:[\s\S]*pnpm add -D luzia-cli/);
   });
 
   it('fails fast from the binary when the terminal is not interactive', async () => {

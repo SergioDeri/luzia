@@ -217,7 +217,7 @@ function functionFile(origins: string[]): FileWrite {
   return {
     path: STANDALONE_FUNCTION,
     content: `import { readFileSync } from 'node:fs';
-import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+import { createLuziaHandler, loadCompiledKnowledgeBase } from 'luzia-core';
 
 // Generated from knowledge-base/ by \`luzia build\`, which the \`build\` script
 // runs before every deploy (vercel.json ships it with the function).
@@ -289,7 +289,7 @@ const ROOT_PAGE = `<!doctype html>
 `;
 
 function installCommands(context: WizardContext): PlannedCommand[] {
-  return luziaInstallCommands(context.state.project.packageManager, ['@luzia/core']);
+  return luziaInstallCommands(context.state.project.packageManager, ['luzia-core']);
 }
 
 function printSnippet(

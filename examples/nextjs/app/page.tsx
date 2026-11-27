@@ -1,4 +1,4 @@
-import { LuziaWidget } from '@luzia/react';
+import { LuziaWidget } from 'luzia-react';
 
 export default function Home() {
   return (

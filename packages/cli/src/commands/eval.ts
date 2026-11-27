@@ -7,7 +7,7 @@ import {
   type ChatModelConfig,
   type ChatModelInstance,
   type LuziaHandlerConfig,
-} from '@luzia/core';
+} from 'luzia-core';
 import type { CliCommand, CliIo } from '../command.ts';
 import { readEvalFile } from '../eval/eval-file.ts';
 import { runEvals, type EvalResult } from '../eval/run-evals.ts';

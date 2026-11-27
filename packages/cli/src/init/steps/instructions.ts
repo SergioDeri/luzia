@@ -1,4 +1,4 @@
-import { INSTRUCTIONS_FILE_NAME } from '@luzia/core';
+import { INSTRUCTIONS_FILE_NAME } from 'luzia-core';
 import { required } from '../prompter.ts';
 import type { WizardStep } from '../step.ts';
 import { KNOWLEDGE_BASE_DIR } from './core.ts';

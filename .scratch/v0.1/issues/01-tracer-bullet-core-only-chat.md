@@ -6,7 +6,7 @@
 
 **Status:** done
 
-- [x] pnpm workspace with `core`, `cli`, `widget` and `react` packages under the `@luzia` scope, MIT license, and a Next.js example app
+- [x] pnpm workspace with `core`, `cli`, `widget` and `react` packages, published as unscoped `luzia-*` packages, MIT license, and a Next.js example app
 - [x] `luzia build` compiles a Knowledge Base folder containing a Core file and optional Instructions file into a single artifact; it is also callable programmatically
 - [x] The build fails with a clear message when the Core file is missing
 - [x] The handler is created from a config object (compiled Knowledge Base, chat model) and turns a Web `Request` carrying conversation messages into a streamed `Response`

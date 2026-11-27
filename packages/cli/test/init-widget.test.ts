@@ -33,7 +33,7 @@ describe('luzia init: widget on Next.js', () => {
 
     expect(run.code).toBe(0);
     const layout = await readProjectFile(cwd, 'app/layout.tsx');
-    expect(layout).toContain("import { LuziaWidget } from '@luzia/react';");
+    expect(layout).toContain("import { LuziaWidget } from 'luzia-react';");
     expect(layout).toContain('endpoint="/api/luzia"');
     expect(layout).toContain('contact="jamie.rivera@example.com"');
     expect(layout).toMatch(/greeting="Hi! I’m luzIA, an AI agent that answers questions about Jamie\. What would you like to know\?"/);
@@ -159,7 +159,7 @@ describe('luzia init: widget on Next.js', () => {
 
     expect(run.code).toBe(0);
     expect(await readProjectFile(cwd, 'app/layout.tsx')).toBe(custom);
-    expect(run.stdout).toContain("import { LuziaWidget } from '@luzia/react';");
+    expect(run.stdout).toContain("import { LuziaWidget } from 'luzia-react';");
     expect(run.stdout).toMatch(/<LuziaWidget\s+endpoint="\/api\/luzia"\s+contact="jamie\.rivera@example\.com"\s+greeting=/);
     const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
     expect(summary).toMatch(/Still to do:[\s\S]*LuziaWidget[\s\S]*app\/layout\.tsx/);
@@ -168,7 +168,7 @@ describe('luzia init: widget on Next.js', () => {
   it('replaces a widget already in the layout instead of adding a second one', async () => {
     const withWidget = [
       "import type { ReactNode } from 'react';",
-      "import { LuziaWidget } from '@luzia/react';",
+      "import { LuziaWidget } from 'luzia-react';",
       '',
       'export default function RootLayout({ children }: { children: ReactNode }) {',
       '  return (',
@@ -189,7 +189,7 @@ describe('luzia init: widget on Next.js', () => {
     expect(run.code).toBe(0);
     const layout = await readProjectFile(cwd, 'app/layout.tsx');
     expect(layout.match(/<LuziaWidget/g)).toHaveLength(1);
-    expect(layout.match(/from '@luzia\/react'/g)).toHaveLength(1);
+    expect(layout.match(/from 'luzia-react'/g)).toHaveLength(1);
     expect(layout).toContain('theme="light"');
     expect(layout).toContain('contact="jamie.rivera@example.com"');
     expect(layout).not.toContain('old@example.com');

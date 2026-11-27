@@ -7,7 +7,7 @@ import {
   EMBEDDING_PROVIDERS,
   type ChatProvider,
   type EmbeddingProvider,
-} from '@luzia/core';
+} from 'luzia-core';
 import type { FileWrite, WizardContext } from '../context.ts';
 import { gitignoreIgnores, mergeEnvFile } from '../env-file.ts';
 import { required } from '../prompter.ts';

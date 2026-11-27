@@ -179,7 +179,7 @@ export function fakeRunner(respond: (request: CommandRequest) => Partial<Command
   return {
     runner,
     requests,
-    /** Each requested command as a single line, e.g. `pnpm add @luzia/core`. */
+    /** Each requested command as a single line, e.g. `pnpm add luzia-core`. */
     get commands() {
       return requests.map((request) => [request.command, ...request.args].join(' '));
     },
@@ -533,7 +533,7 @@ export const EXISTING_INSTRUCTIONS =
   'If asked about salary or compensation, say Jamie Rivera prefers to discuss it on a call, and share the contact details.\n';
 
 const EXISTING_LAYOUT = `import type { ReactNode } from 'react';
-import { LuziaWidget } from '@luzia/react';
+import { LuziaWidget } from 'luzia-react';
 
 export const metadata = { title: 'Jamie Rivera' };
 
@@ -554,7 +554,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 `;
 
-const EXISTING_ROUTE = `import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+const EXISTING_ROUTE = `import { createLuziaHandler, loadCompiledKnowledgeBase } from 'luzia-core';
 import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json';
 
 const handler = createLuziaHandler({
@@ -609,7 +609,7 @@ export async function existingSetupProject(
 }
 
 const EXISTING_STANDALONE_FUNCTION = `import { readFileSync } from 'node:fs';
-import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+import { createLuziaHandler, loadCompiledKnowledgeBase } from 'luzia-core';
 
 const compiledKnowledgeBase = JSON.parse(
   readFileSync(new URL('../.luzia/knowledge-base.json', import.meta.url), 'utf8'),

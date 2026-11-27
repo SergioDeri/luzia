@@ -100,7 +100,7 @@ Everything stays file-based and self-hosted (ADR 0001): the wizard only writes f
 
 ## Implementation Decisions
 
-- **Command**: `luzia init`, a new command in the CLI's existing command registry, runnable via `npx luzia init` once `@luzia/cli` is published. It requires an interactive terminal and exits with a clear error otherwise.
+- **Command**: `luzia init`, a new command in the CLI's existing command registry, runnable via `npx luzia init` once `luzia-cli` is published. It requires an interactive terminal and exits with a clear error otherwise.
 - **Architecture fit**: consistent with ADR 0001 — the wizard only reads and writes files in the Owner's project and runs local commands (package install, `luzia build`, `vercel env add`) after confirmation. No hosted service, no database.
 - **Injected dependencies for testability**: the CLI's `io` gains three injectable collaborators, with real implementations used by the binary:
   - a **prompter** (text, secret input without echo, select, confirm, multi-line edit / open-in-editor, diff-and-confirm),
@@ -108,7 +108,7 @@ Everything stays file-based and self-hosted (ADR 0001): the wizard only writes f
   - a **command runner** for external commands (package manager install, Vercel CLI detection and `vercel env add`).
   A maintained terminal-prompt library may back the real prompter (check current versions); the wizard logic depends only on the prompter interface.
 - **Project detection**: Next.js is detected from the project's `package.json` dependencies and an App Router directory; the package manager from the lockfile present. Anything else takes the standalone path.
-- **Next.js integration**: install `@luzia/core`, `@luzia/cli` and `@luzia/react`; create the server route exporting chat and preflight handlers; add the React widget to the root layout via a shown-and-confirmed change; prefix the `dev` and `build` scripts with `luzia build` via a shown-and-confirmed change. If the root layout can't be modified safely, print the exact snippet instead of guessing.
+- **Next.js integration**: install `luzia-core`, `luzia-cli` and `luzia-react`; create the server route exporting chat and preflight handlers; add the React widget to the root layout via a shown-and-confirmed change; prefix the `dev` and `build` scripts with `luzia build` via a shown-and-confirmed change. If the root layout can't be modified safely, print the exact snippet instead of guessing.
 - **Standalone integration**: scaffold a standalone server matching the existing standalone example, set allowed origins from the Owner's portfolio domain(s), and print the script-tag snippet with the chosen widget options.
 - **Providers**: chat providers and embeddings providers are read from core's existing provider tables (single source of truth), so the wizard offers exactly what the server supports. Each provider has a short list of suggested model ids defined alongside it; free text is always allowed.
 - **Keys**: saved without validation (an explicit decision). Written only to `.env.local`, merging luzIA variables into an existing file and keeping others. `.env.local` is added to `.gitignore` if not already ignored. Secrets are never printed back.

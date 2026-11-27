@@ -1,9 +1,9 @@
-# @luzia/react
+# luzia-react
 
-A thin React wrapper over [`@luzia/widget`](../widget), configured with props.
+A thin React wrapper over [`luzia-widget`](../widget), configured with props.
 
 ```tsx
-import { LuziaWidget } from '@luzia/react';
+import { LuziaWidget } from 'luzia-react';
 
 <LuziaWidget
   endpoint="/api/luzia"

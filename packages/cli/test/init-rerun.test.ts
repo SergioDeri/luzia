@@ -226,7 +226,7 @@ describe('luzia init: re-run on an existing setup', () => {
     it('starts from the widget options in the layout, so keeping them changes nothing', async () => {
       const cwd = await existingSetupProject({
         'app/layout.tsx': `import type { ReactNode } from 'react';
-import { LuziaWidget } from '@luzia/react';
+import { LuziaWidget } from 'luzia-react';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -268,7 +268,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
     it('offers the current greeting and questions as the defaults when editing them', async () => {
       const cwd = await existingSetupProject({
-        'app/layout.tsx': `import { LuziaWidget } from '@luzia/react';
+        'app/layout.tsx': `import { LuziaWidget } from 'luzia-react';
 
 export default function RootLayout({ children }) {
   return (
@@ -429,7 +429,7 @@ export default function RootLayout({ children }) {
       });
 
       expect(run.code).toBe(0);
-      expect(run.stdout).toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script>');
+      expect(run.stdout).toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/luzia-widget/dist/luzia-widget.js"></script>');
       const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
       expect(snippet).toContain('endpoint="https://YOUR-LUZIA-SERVER.vercel.app/api/luzia"');
       expect(snippet).toContain('contact="hello@jamie.dev"');
@@ -444,7 +444,7 @@ export default function RootLayout({ children }) {
       const cwd = await existingStandaloneProject({
         'index.html': `<!doctype html>
 <html>
-  <head><script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script></head>
+  <head><script type="module" src="https://cdn.jsdelivr.net/npm/luzia-widget/dist/luzia-widget.js"></script></head>
   <body>
     <luzia-widget
       endpoint="https://luzia-jamie.vercel.app/api/luzia"
@@ -497,7 +497,7 @@ export default function RootLayout({ children }) {
       expect(layout).toContain('theme="dark"');
       const packageJson = JSON.parse(await readProjectFile(cwd, 'package.json'));
       expect(packageJson.scripts.dev).toMatch(/^luzia build && /);
-      expect(run.commands).toEqual(['pnpm add @luzia/core @luzia/react', 'pnpm add -D @luzia/cli']);
+      expect(run.commands).toEqual(['pnpm add luzia-core luzia-react', 'pnpm add -D luzia-cli']);
     });
 
     it('on a standalone folder, offers to set up the server, then builds the missing Knowledge Base', async () => {

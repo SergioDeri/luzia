@@ -27,7 +27,7 @@
     "cli"
   ],
   "dependencies": {
-    "@luzia/cli": "workspace:^"
+    "luzia-cli": "workspace:^"
   },
   "engines": {
     "node": ">=22.18"

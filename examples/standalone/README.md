@@ -18,4 +18,4 @@ vercel.json              ships the compiled Knowledge Base with the function
 - To try it locally, run `vercel dev` here and serve `static-site/` from an allowed origin (e.g. add `http://localhost:8080` to the allowed origins and run `npx serve -l 8080 static-site`), changing the widget's `endpoint` to `http://localhost:3000/api/luzia`.
 - `pnpm test` (from the repo root) builds the Knowledge Base, loads the function and checks that only the portfolio's origin gets through.
 
-Inside this monorepo the luzIA packages are linked from source (`workspace:*`). In your own project, install them from npm: `pnpm add @luzia/core` and `pnpm add -D @luzia/cli`.
+Inside this monorepo the luzIA packages are linked from source (`workspace:*`). In your own project, install them from npm: `pnpm add luzia-core` and `pnpm add -D luzia-cli`.

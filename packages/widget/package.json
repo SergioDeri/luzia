@@ -1,5 +1,5 @@
 {
-  "name": "@luzia/widget",
+  "name": "luzia-widget",
   "version": "0.1.0",
   "description": "Embeddable luzIA chat widget (framework-free Web Component)",
   "license": "MIT",

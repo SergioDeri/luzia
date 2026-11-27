@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { CHAT_PROVIDERS, EMBEDDING_MODEL_ENV, EMBEDDING_PROVIDER_ENV, EMBEDDING_PROVIDERS } from '@luzia/core';
+import { CHAT_PROVIDERS, EMBEDDING_MODEL_ENV, EMBEDDING_PROVIDER_ENV, EMBEDDING_PROVIDERS } from 'luzia-core';
 import type { WizardContext } from './context.ts';
 import { readExistingSetup, useExistingSetup, type ExistingSetup } from './existing-setup.ts';
 import type { WizardStep } from './step.ts';

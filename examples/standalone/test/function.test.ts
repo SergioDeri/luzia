@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { runCli } from '@luzia/cli';
+import { runCli } from 'luzia-cli';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Smoke test of the deployable function: the Knowledge Base builds, the module

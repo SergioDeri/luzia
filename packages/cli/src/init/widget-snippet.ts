@@ -6,7 +6,7 @@ export interface WidgetProps extends WidgetOptions {
 }
 
 /** The import a file needs before rendering {@link reactWidget}. */
-export const REACT_WIDGET_IMPORT = "import { LuziaWidget } from '@luzia/react';";
+export const REACT_WIDGET_IMPORT = "import { LuziaWidget } from 'luzia-react';";
 
 /**
  * The `<LuziaWidget … />` element for a React/Next.js file, one prop per line,
@@ -41,7 +41,7 @@ export function htmlWidget(props: WidgetProps, indent = ''): string[] {
 }
 
 /** The widget's script bundle, which registers `<luzia-widget>` as soon as it loads. */
-export const WIDGET_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js';
+export const WIDGET_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/luzia-widget/dist/luzia-widget.js';
 
 /**
  * Everything an HTML page needs: the `<script type="module">` tag that loads

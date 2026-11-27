@@ -45,7 +45,7 @@ export function layoutWithWidget(layout: string, props: WidgetProps): string | n
   }
 
   const result = lines.join('\n');
-  return /from\s+['"]@luzia\/react['"]/.test(result) ? result : withImport(result, REACT_WIDGET_IMPORT);
+  return /from\s+['"]luzia-react['"]/.test(result) ? result : withImport(result, REACT_WIDGET_IMPORT);
 }
 
 /** Adds `statement` after the last top-level import, after a leading directive, or at the top. */

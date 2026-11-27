@@ -4,7 +4,7 @@ A Next.js portfolio with luzIA mounted as a route and the widget on the home pag
 
 ```
 app/api/luzia/route.ts   the handler: POST (chat) and OPTIONS (CORS preflight)
-app/page.tsx             the page, with <LuziaWidget> from @luzia/react
+app/page.tsx             the page, with <LuziaWidget> from luzia-react
 knowledge-base/          the Owner's Knowledge Base (core.md, instructions.md)
 luzia.evals.json         eval cases for `luzia eval`
 .env.example             copy to .env.local and fill in
@@ -14,4 +14,4 @@ luzia.evals.json         eval cases for `luzia eval`
 - The widget calls `/api/luzia` on the same origin, so no allowed origins are configured.
 - `pnpm eval` compiles the Knowledge Base and runs `luzia eval` against your real model.
 
-Inside this monorepo the luzIA packages are linked from source (`workspace:*`, compiled through `transpilePackages`). In your own app, install them from npm and drop `transpilePackages`: `pnpm add @luzia/core @luzia/react` and `pnpm add -D @luzia/cli`.
+Inside this monorepo the luzIA packages are linked from source (`workspace:*`, compiled through `transpilePackages`). In your own app, install them from npm and drop `transpilePackages`: `pnpm add luzia-core luzia-react` and `pnpm add -D luzia-cli`.

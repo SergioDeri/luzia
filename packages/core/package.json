@@ -1,5 +1,5 @@
 {
-  "name": "@luzia/core",
+  "name": "luzia-core",
   "version": "0.1.0",
   "description": "luzIA server handler and Knowledge Base compiler",
   "license": "MIT",

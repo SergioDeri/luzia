@@ -64,11 +64,11 @@ describe('luzia init: standalone server', () => {
     const packageJson = JSON.parse(await readProjectFile(cwd, 'package.json'));
     expect(packageJson.type).toBe('module');
     expect(packageJson.scripts.build).toBe('luzia build');
-    expect(run.commands).toEqual(['npm install @luzia/core', 'npm install --save-dev @luzia/cli']);
+    expect(run.commands).toEqual(['npm install luzia-core', 'npm install --save-dev luzia-cli']);
 
     // The Vercel Function answers chat and CORS preflight from the compiled Knowledge Base.
     const fn = await readProjectFile(cwd, 'api/luzia.ts');
-    expect(fn).toContain("from '@luzia/core'");
+    expect(fn).toContain("from 'luzia-core'");
     expect(fn).toContain("new URL('../.luzia/knowledge-base.json', import.meta.url)");
     expect(fn).toContain("allowedOrigins: ['https://jamie.example.com', 'https://www.jamie.example.com']");
     expect(fn).toMatch(/export const POST = handler/);
@@ -86,7 +86,7 @@ describe('luzia init: standalone server', () => {
 
     // The snippet: script bundle plus the widget with every configured option.
     expect(run.stdout).toContain(
-      '<script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script>',
+      '<script type="module" src="https://cdn.jsdelivr.net/npm/luzia-widget/dist/luzia-widget.js"></script>',
     );
     const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
     expect(snippet).toContain('endpoint="https://YOUR-LUZIA-SERVER.vercel.app/api/luzia"');
@@ -162,7 +162,7 @@ describe('luzia init: standalone server', () => {
     const run = await runInit(cwd, { answers: fullRunAnswers({ integration: standaloneAnswers() }) });
 
     expect(run.code).toBe(0);
-    expect(run.commands).toEqual(['pnpm add @luzia/core', 'pnpm add -D @luzia/cli']);
+    expect(run.commands).toEqual(['pnpm add luzia-core', 'pnpm add -D luzia-cli']);
     const packageJson = JSON.parse(await readProjectFile(cwd, 'package.json'));
     expect(packageJson).toMatchObject({ name: 'jamie-site', type: 'module', scripts: { build: 'luzia build && eleventy' } });
     expect(run.stdout).toMatch(/Update package\.json:[\s\S]*\+\s+"build": "luzia build && eleventy"/);

@@ -1,6 +1,6 @@
 import type { LuziaRequestError } from './chat-client.ts';
 
-/** Server error codes meaning the conversation itself hit a limit (see `@luzia/core` limits). */
+/** Server error codes meaning the conversation itself hit a limit (see `luzia-core` limits). */
 export const CONVERSATION_LIMIT_CODE = 'conversation_limit_reached';
 export const MESSAGE_TOO_LONG_CODE = 'message_too_long';
 

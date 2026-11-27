@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import { CHAT_PROVIDERS, pdfReader } from '@luzia/core';
+import { CHAT_PROVIDERS, pdfReader } from 'luzia-core';
 import { DEFAULT_KNOWLEDGE_BASE_DIR } from '../../commands/build.ts';
 import type { WizardContext } from '../context.ts';
 import { mergeEnvFile } from '../env-file.ts';

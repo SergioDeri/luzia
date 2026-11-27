@@ -197,10 +197,10 @@ importers:
 
   examples/nextjs:
     dependencies:
-      '@luzia/core':
+      luzia-core:
         specifier: workspace:*
         version: link:../../packages/core
-      '@luzia/react':
+      luzia-react:
         specifier: workspace:*
         version: link:../../packages/react
       next:
@@ -213,9 +213,6 @@ importers:
         specifier: ^19.3.1
         version: 19.3.1(react@19.3.1)
     devDependencies:
-      '@luzia/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
       '@types/node':
         specifier: ^26.6.11
         version: 26.6.11
@@ -225,22 +222,25 @@ importers:
       '@types/react-dom':
         specifier: ^19.3.0
         version: 19.3.0(@types/react@19.3.3)
+      luzia-cli:
+        specifier: workspace:*
+        version: link:../../packages/cli
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
 
   examples/standalone:
     dependencies:
-      '@luzia/core':
+      luzia-core:
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:
-      '@luzia/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
       '@types/node':
         specifier: ^26.6.11
         version: 26.6.11
+      luzia-cli:
+        specifier: workspace:*
+        version: link:../../packages/cli
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
@@ -253,12 +253,12 @@ importers:
       '@clack/prompts':
         specifier: ^1.9.0
         version: 1.9.0
-      '@luzia/core':
-        specifier: workspace:^
-        version: link:../core
       ai:
         specifier: ^7.0.182
         version: 7.0.182(zod@4.6.7)
+      luzia-core:
+        specifier: workspace:^
+        version: link:../core
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -302,13 +302,13 @@ importers:
 
   packages/luzia:
     dependencies:
-      '@luzia/cli':
+      luzia-cli:
         specifier: workspace:^
         version: link:../cli
 
   packages/react:
     dependencies:
-      '@luzia/widget':
+      luzia-widget:
         specifier: workspace:^
         version: link:../widget
     devDependencies:

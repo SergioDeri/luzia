@@ -1,4 +1,4 @@
-import { CORE_FILE_NAME } from '@luzia/core';
+import { CORE_FILE_NAME } from 'luzia-core';
 import { ALREADY_CONFIRMED, type WizardContext } from '../context.ts';
 import { coreSources, parseCore, type CoreSource, type ProposedCore } from '../core-sources/index.ts';
 import type { WizardStep } from '../step.ts';

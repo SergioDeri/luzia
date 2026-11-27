@@ -9,7 +9,7 @@ import {
   EMBEDDING_PROVIDERS,
   type ChatProvider,
   type EmbeddingProvider,
-} from '@luzia/core';
+} from 'luzia-core';
 import type { CoreDraft, ModelChoices, WizardContext } from './context.ts';
 import { parseCore } from './core-sources/index.ts';
 import { readEnvFile } from './env-file.ts';

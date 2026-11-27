@@ -1,4 +1,4 @@
-import type { ChatModelInstance, LuziaHandler } from '@luzia/core';
+import type { ChatModelInstance, LuziaHandler } from 'luzia-core';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import type { EvalCase } from './eval-file.ts';

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { resolveChatModel, type ChatModelInstance, type ChatProvider, type EmbeddingProvider } from '@luzia/core';
+import { resolveChatModel, type ChatModelInstance, type ChatProvider, type EmbeddingProvider } from 'luzia-core';
 import type { CliIo } from '../command.ts';
 import type { CommandRequest, CommandRunner } from './command-runner.ts';
 import { isDotenvFile, lineDiff, maskDotenv } from './diff.ts';
