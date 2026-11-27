@@ -50,6 +50,11 @@ export interface WizardState {
   models?: ModelChoices;
   /** luzIA variables for `.env.local` (secrets included), by name. */
   envValues: Record<string, string>;
+  /**
+   * Settings the Owner typed but chose not to save to `.env.local`: used for
+   * the rest of this run (e.g. drafting the Core), never written or uploaded.
+   */
+  unsavedEnv?: Record<string, string>;
   core?: CoreDraft;
   /** Instructions markdown (filled in by the Instructions step). */
   instructions?: string;
@@ -159,7 +164,7 @@ export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardC
       if (value) secrets.add(value);
     },
     redact,
-    projectEnv: () => ({ ...env, ...state.envValues }),
+    projectEnv: () => ({ ...env, ...state.unsavedEnv, ...state.envValues }),
     async chatModel() {
       if (io.chatModel) return io.chatModel;
       if (!state.models) throw new Error('No chat model chosen yet.');

@@ -327,6 +327,8 @@ export interface ModelAnswers {
   embeddingProvider?: string;
   embeddingModel?: string;
   keys?: ScriptedAnswer[];
+  /** Whether the Owner agrees to save the settings to `.env.local` (default yes). */
+  save?: boolean;
 }
 
 /** Models and keys: Anthropic for chat, OpenAI for embeddings by default. */
@@ -341,7 +343,7 @@ export function modelAnswers(options: ModelAnswers = {}): ScriptedAnswer[] {
       answer.secret('ANTHROPIC_API_KEY', OWNER_KEYS.anthropic),
       answer.secret('OPENAI_API_KEY', OWNER_KEYS.openai),
     ]),
-    answer.confirm(/\.env\.local/, true),
+    answer.confirm(/\.env\.local/, options.save ?? true),
   ];
 }
 

@@ -98,6 +98,7 @@ export const modelsStep: WizardStep = {
       // Declined on a re-run: the models already set up stay in use.
       context.state.models = current;
     } else {
+      context.state.unsavedEnv = { ...context.state.unsavedEnv, ...values };
       context.changes.todo.push(`Set ${Object.keys(values).join(', ')} in ${ENV_FILE}`);
     }
   },
