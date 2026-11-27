@@ -305,14 +305,48 @@ export function instructionsAnswers(options: InstructionsAnswers = {}): Scripted
   ];
 }
 
-/** Widget: no questions yet. */
-export function widgetAnswers(): ScriptedAnswer[] {
-  return [];
+export interface WidgetAnswers {
+  /** Replaces the proposed greeting and questions (each left out keeps the proposal). */
+  edit?: { greeting?: string; questions?: [string?, string?, string?] };
+  theme?: 'auto' | 'light' | 'dark';
+  mode?: 'bubble' | 'inline';
 }
 
-/** Next.js integration: confirm installing packages and creating the route. */
-export function integrationAnswers(options: { apply?: boolean } = {}): ScriptedAnswer[] {
-  return [answer.confirm(/Apply these changes/, options.apply ?? true)];
+/** Widget: keep the proposed greeting and questions (or edit them), then theme and mode. */
+export function widgetAnswers(options: WidgetAnswers = {}): ScriptedAnswer[] {
+  const edit = options.edit;
+  return [
+    answer.confirm(/Use this greeting and these questions/, !edit),
+    ...(edit
+      ? [
+          answer.text(/Greeting/, edit.greeting ?? ''),
+          ...[0, 1, 2].map((index) => answer.text(`Suggested question ${index + 1}`, edit.questions?.[index] ?? '')),
+        ]
+      : []),
+    answer.select(/theme/i, options.theme ?? 'auto'),
+    answer.select(/bubble|inline/i, options.mode ?? 'bubble'),
+  ];
+}
+
+export interface IntegrationAnswers {
+  /** Installing the packages and creating the route (and the default for the other two). */
+  apply?: boolean;
+  /** Adding the widget to the root layout; `null` when the layout isn't recognised, so nothing is asked. */
+  layout?: boolean | null;
+  /** Prefixing the `dev` and `build` scripts with `luzia build`; `null` when nothing would change. */
+  scripts?: boolean | null;
+}
+
+/** Next.js integration: confirm the packages and route, the root layout change, and the scripts change. */
+export function integrationAnswers(options: IntegrationAnswers = {}): ScriptedAnswer[] {
+  const apply = options.apply ?? true;
+  const layout = options.layout === undefined ? apply : options.layout;
+  const scripts = options.scripts === undefined ? apply : options.scripts;
+  return [
+    answer.confirm(/Apply these changes/, apply),
+    ...(layout === null ? [] : [answer.confirm(/Add the widget to/, layout)]),
+    ...(scripts === null ? [] : [answer.confirm(/luzia build.*dev.*build/, scripts)]),
+  ];
 }
 
 export interface ProductionAnswers {

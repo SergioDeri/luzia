@@ -27,6 +27,12 @@ export interface CoreDraft {
   contact: string;
   /** Further files the source adds to the Knowledge Base (e.g. the CV PDF). */
   files?: FileWrite[];
+  /**
+   * Set when the chat model drafted the Core, so the Owner already agreed to
+   * send their details to it: the widget step then also asks it for a greeting
+   * and suggested questions. Otherwise the widget starts from fixed defaults.
+   */
+  drafted?: boolean;
 }
 
 /** Widget options (filled in by the widget step). */

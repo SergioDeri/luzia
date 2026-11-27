@@ -99,7 +99,7 @@ describe('luzia init', () => {
   it('merges luzIA variables into an existing .env.local, keeps the others, and shows the change without secrets', async () => {
     const cwd = await ownerProject('nextjs-app', {
       '.env.local': 'DATABASE_URL=postgres://localhost/portfolio\nLUZIA_CHAT_MODEL=old-model\n',
-      '.gitignore': 'node_modules/\n.env*.local\n',
+      '.gitignore': 'node_modules/\n.env*.local\n.luzia/\n',
     });
 
     const run = await runInit(cwd, { answers: fullRunAnswers() });
@@ -116,7 +116,7 @@ describe('luzia init', () => {
     expect(run.stdout).toContain('+ ANTHROPIC_API_KEY=<hidden>');
     expect(run.output).not.toContain(OWNER_KEYS.anthropic);
     // Already ignored by .env*.local, so .gitignore is left alone.
-    expect(await readProjectFile(cwd, '.gitignore')).toBe('node_modules/\n.env*.local\n');
+    expect(await readProjectFile(cwd, '.gitignore')).toBe('node_modules/\n.env*.local\n.luzia/\n');
   });
 
   it('offers the providers core supports, asks a shared key once, and accepts any model id', async () => {
@@ -154,7 +154,8 @@ describe('luzia init', () => {
       { remove: ['pnpm-lock.yaml', 'app', 'tsconfig.json'] },
     );
 
-    const run = await runInit(cwd, { answers: fullRunAnswers() });
+    // This layout has no <body>, so the widget snippet is printed instead of asked about.
+    const run = await runInit(cwd, { answers: fullRunAnswers({ integration: integrationAnswers({ layout: null }) }) });
 
     expect(run.code).toBe(0);
     expect(run.stdout).toMatch(/Next\.js.*src\/app.*npm/);
@@ -183,7 +184,7 @@ describe('luzia init', () => {
     const core = coreAnswers();
     core[core.length - 1] = answer.cancel('confirm', /Save the Core/);
 
-    const run = await runInit(cwd, { answers: fullRunAnswers({ core, instructions: [], integration: [] }) });
+    const run = await runInit(cwd, { answers: fullRunAnswers({ core, instructions: [], widget: [], integration: [] }) });
 
     expect(run.code).toBe(1);
     expect(run.stdout).toMatch(/Setup cancelled/);
