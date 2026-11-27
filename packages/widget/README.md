@@ -16,6 +16,6 @@ import { defineLuziaWidget } from '@luzia/widget';
 defineLuziaWidget();
 ```
 
-Attributes: `endpoint`, `contact`, `greeting`, `suggested-questions` (JSON array), `mode` (`bubble` | `inline`), `theme` (`light` | `dark` | `auto`). Theme colours are `--luzia-*` CSS custom properties. See the [root README](../../README.md#widget) for details. For React, use [`@luzia/react`](../react).
+Attributes: `endpoint`, `contact`, `greeting`, `suggested-questions` (JSON array), `mode` (`bubble` | `inline`), `theme` (`light` | `dark` | `auto`), `avatar` (image URL for the chat header; luzIA's icon when unset). Theme colours are `--luzia-*` CSS custom properties. See the [root README](../../README.md#widget) for details. For React, use [`@luzia/react`](../react).
 
 `pnpm build` emits the module build and `dist/luzia-widget.js` (the script bundle, built with esbuild from `src/register.ts`).
