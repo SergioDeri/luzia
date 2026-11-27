@@ -278,9 +278,31 @@ export function coreAnswers(options: { save?: boolean } = {}): ScriptedAnswer[] 
   ];
 }
 
-/** Instructions: no questions yet. */
-export function instructionsAnswers(): ScriptedAnswer[] {
-  return [];
+export interface InstructionsAnswers {
+  /** `range`, `call` (the default) or `decline`. */
+  salary?: 'range' | 'call' | 'decline';
+  /** Typed in after choosing `range`. */
+  salaryRange?: string;
+  /** Empty (the default) skips the topic. */
+  availability?: string;
+  /** Empty (the default) skips the topic. */
+  relocation?: string;
+  /** Empty (the default) adds nothing. */
+  other?: string;
+  save?: boolean;
+}
+
+/** Instructions: salary, availability, relocation and anything else, then saving them. */
+export function instructionsAnswers(options: InstructionsAnswers = {}): ScriptedAnswer[] {
+  const salary = options.salary ?? 'call';
+  return [
+    answer.select(/salary/i, salary),
+    ...(salary === 'range' ? [answer.text(/salary range/i, options.salaryRange ?? '')] : []),
+    answer.text(/availability/i, options.availability ?? ''),
+    answer.text(/relocation/i, options.relocation ?? ''),
+    answer.text(/anything else/i, options.other ?? ''),
+    answer.confirm(/Save the Instructions/, options.save ?? true),
+  ];
 }
 
 /** Widget: no questions yet. */

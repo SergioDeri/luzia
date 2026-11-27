@@ -183,13 +183,14 @@ describe('luzia init', () => {
     const core = coreAnswers();
     core[core.length - 1] = answer.cancel('confirm', /Save the Core/);
 
-    const run = await runInit(cwd, { answers: fullRunAnswers({ core, integration: [] }) });
+    const run = await runInit(cwd, { answers: fullRunAnswers({ core, instructions: [], integration: [] }) });
 
     expect(run.code).toBe(1);
     expect(run.stdout).toMatch(/Setup cancelled/);
     expect(run.stdout).toMatch(/Created: \.env\.local/);
     expect(await projectFileExists(cwd, '.env.local')).toBe(true);
     expect(await projectFileExists(cwd, 'knowledge-base/core.md')).toBe(false);
+    expect(await projectFileExists(cwd, 'knowledge-base/instructions.md')).toBe(false);
     expect(await projectFileExists(cwd, 'app/api/luzia/route.ts')).toBe(false);
     expect(await projectFileExists(cwd, '.luzia/knowledge-base.json')).toBe(false);
     expect(run.commands).toEqual([]);
