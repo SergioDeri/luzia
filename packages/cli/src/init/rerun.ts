@@ -94,7 +94,7 @@ async function runSection(context: WizardContext, section: Section): Promise<voi
 
   for (const step of section.steps) {
     if (step.applies && !step.applies(context)) {
-      if (step === productionStep) context.say(`There are no luzIA variables in ${ENV_FILE} to set for production yet.`);
+      if (step.notApplicableMessage) context.say(step.notApplicableMessage);
       continue;
     }
     await step.run(context);
@@ -111,11 +111,16 @@ async function runSection(context: WizardContext, section: Section): Promise<voi
 }
 
 /** How many files had been created and updated, to tell later which ones a section wrote. */
-function written(context: WizardContext): { created: number; updated: number } {
+interface WrittenCounts {
+  created: number;
+  updated: number;
+}
+
+function written(context: WizardContext): WrittenCounts {
   return { created: context.changes.created.length, updated: context.changes.updated.length };
 }
 
-function writtenSince(context: WizardContext, before: { created: number; updated: number }): string[] {
+function writtenSince(context: WizardContext, before: WrittenCounts): string[] {
   return [...context.changes.created.slice(before.created), ...context.changes.updated.slice(before.updated)];
 }
 

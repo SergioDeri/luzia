@@ -12,5 +12,7 @@ export interface WizardStep {
   title?: string;
   /** Whether the step runs for this project and state. Defaults to always. */
   applies?(context: WizardContext): boolean;
+  /** Said when the step is picked from the re-run menu but doesn't apply, e.g. why there is nothing to do. */
+  notApplicableMessage?: string;
   run(context: WizardContext): Promise<void>;
 }

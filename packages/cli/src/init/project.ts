@@ -92,3 +92,18 @@ export function execCommand(manager: PackageManager, bin: string): string {
 export function runScriptCommand(manager: PackageManager, script: string): string {
   return manager === 'npm' ? `npm run ${script}` : `${manager} ${script}`;
 }
+
+/**
+ * Installs luzIA: `runtime` packages as dependencies and `@luzia/cli` as a dev
+ * dependency, streamed, with a fallback to-do if the install fails.
+ */
+export function luziaInstallCommands(
+  manager: PackageManager,
+  runtime: string[],
+): { command: string; args: string[]; stream: true; fallback: string }[] {
+  return [addPackagesCommand(manager, runtime), addPackagesCommand(manager, ['@luzia/cli'], { dev: true })].map((command) => ({
+    ...command,
+    stream: true as const,
+    fallback: `Install the luzIA packages: ${[command.command, ...command.args].join(' ')}`,
+  }));
+}

@@ -22,6 +22,7 @@ export const productionStep: WizardStep = {
   id: 'production',
   title: 'Production variables',
   applies: (context) => Object.keys(context.state.envValues).length > 0,
+  notApplicableMessage: `There are no luzIA variables in ${ENV_FILE} to set for production yet.`,
   async run(context) {
     if (!isLinkedToVercel(context.cwd)) {
       printVariables(context);

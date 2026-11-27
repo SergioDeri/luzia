@@ -1,11 +1,12 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { buildCommand, DEFAULT_ARTIFACT_PATH } from '../../commands/build.ts';
+import { buildCommand } from '../../commands/build.ts';
+import { ARTIFACT_PATH } from '../paths.ts';
 import { execCommand } from '../project.ts';
 import type { WizardStep } from '../step.ts';
 import { CORE_PATH } from './core.ts';
 
-export const ARTIFACT_PATH = DEFAULT_ARTIFACT_PATH;
+export { ARTIFACT_PATH };
 
 /** Runs `luzia build` with the Owner's new settings and shows its report. */
 export const buildStep: WizardStep = {

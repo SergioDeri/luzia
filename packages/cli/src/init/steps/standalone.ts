@@ -1,16 +1,13 @@
 import path from 'node:path';
 import type { FileWrite, PlannedCommand, WizardContext } from '../context.ts';
 import { gitignoreWith } from '../gitignore.ts';
-import { LUZIA_BUILD } from '../nextjs-layout.ts';
-import { addPackagesCommand } from '../project.ts';
+import { luziaInstallCommands } from '../project.ts';
 import type { WizardStep } from '../step.ts';
 import { htmlWidgetSnippet, type WidgetProps } from '../widget-snippet.ts';
-import { ARTIFACT_PATH } from './build.ts';
-import { ARTIFACT_IGNORE } from './nextjs.ts';
+import { ARTIFACT_IGNORE, ARTIFACT_PATH, ENDPOINT_PATH, LUZIA_BUILD } from '../paths.ts';
 
 /** The function file and the path it answers at once deployed on Vercel. */
 export const STANDALONE_FUNCTION = 'api/luzia.ts';
-export const STANDALONE_ENDPOINT_PATH = '/api/luzia';
 /** Used in the snippet until the Owner knows where the server is deployed. */
 export const SERVER_PLACEHOLDER = 'https://YOUR-LUZIA-SERVER.vercel.app';
 
@@ -43,7 +40,7 @@ export const standaloneStep: WizardStep = {
       ])),
     ];
     context.say(
-      `The server answers the widget at ${STANDALONE_ENDPOINT_PATH} once deployed, using the models set in your hosting provider.`,
+      `The server answers the widget at ${ENDPOINT_PATH} once deployed, using the models set in your hosting provider.`,
     );
     const applied = await context.apply(
       { files, commands: installCommands(context) },
@@ -169,12 +166,12 @@ async function askEndpoint(context: WizardContext): Promise<string> {
       context.changes.todo.push(
         `After deploying, replace ${SERVER_PLACEHOLDER} in the widget’s endpoint with your server’s URL`,
       );
-      return `${SERVER_PLACEHOLDER}${STANDALONE_ENDPOINT_PATH}`;
+      return `${SERVER_PLACEHOLDER}${ENDPOINT_PATH}`;
     }
     const url = parseUrl(answer);
     if (url && !url.search && !url.hash) {
       const pathname = url.pathname.replace(/\/$/, '');
-      return `${url.origin}${pathname || STANDALONE_ENDPOINT_PATH}`;
+      return `${url.origin}${pathname || ENDPOINT_PATH}`;
     }
     context.warn(`"${answer}" is not a valid URL. Enter one such as https://luzia-jamie.vercel.app, or leave it empty.`);
   }
@@ -286,20 +283,13 @@ const ROOT_PAGE = `<!doctype html>
     <title>luzIA server</title>
   </head>
   <body>
-    <p>This is a luzIA server. The chat endpoint is <code>POST ${STANDALONE_ENDPOINT_PATH}</code>.</p>
+    <p>This is a luzIA server. The chat endpoint is <code>POST ${ENDPOINT_PATH}</code>.</p>
   </body>
 </html>
 `;
 
 function installCommands(context: WizardContext): PlannedCommand[] {
-  const manager = context.state.project.packageManager;
-  const runtime = addPackagesCommand(manager, ['@luzia/core']);
-  const dev = addPackagesCommand(manager, ['@luzia/cli'], { dev: true });
-  return [runtime, dev].map((command) => ({
-    ...command,
-    stream: true,
-    fallback: `Install the luzIA packages: ${[command.command, ...command.args].join(' ')}`,
-  }));
+  return luziaInstallCommands(context.state.project.packageManager, ['@luzia/core']);
 }
 
 function printSnippet(

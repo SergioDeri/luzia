@@ -1,13 +1,12 @@
 import path from 'node:path';
 import type { FileWrite, PlannedCommand, WizardContext } from '../context.ts';
-import { gitignoreWith, type IgnoreEntry } from '../gitignore.ts';
-import { layoutWithWidget, LUZIA_BUILD, packageJsonWithLuziaBuild } from '../nextjs-layout.ts';
-import { addPackagesCommand, type ProjectInfo } from '../project.ts';
+import { gitignoreWith } from '../gitignore.ts';
+import { layoutWithWidget, packageJsonWithLuziaBuild } from '../nextjs-layout.ts';
+import { ARTIFACT_IGNORE, ARTIFACT_PATH, ENDPOINT_PATH, LUZIA_BUILD } from '../paths.ts';
+import { luziaInstallCommands, type ProjectInfo } from '../project.ts';
 import type { WizardStep } from '../step.ts';
 import { reactWidget, REACT_WIDGET_IMPORT, type WidgetProps } from '../widget-snippet.ts';
-import { ARTIFACT_PATH } from './build.ts';
 
-export const NEXTJS_ENDPOINT = '/api/luzia';
 
 /**
  * Next.js integration: install the luzIA packages, add the server route, add
@@ -19,11 +18,11 @@ export const nextjsStep: WizardStep = {
   title: 'Add luzIA to your Next.js app',
   applies: (context) => context.state.project.kind === 'nextjs',
   async run(context) {
-    context.state.endpoint = NEXTJS_ENDPOINT;
+    context.state.endpoint = ENDPOINT_PATH;
     const files: FileWrite[] = [routeFile(context), ...(await gitignoreWith(context, [ARTIFACT_IGNORE]))];
     const commands = installCommands(context);
 
-    context.say(`The server route answers the widget at ${NEXTJS_ENDPOINT}, using the models in .env.local.`);
+    context.say(`The server route answers the widget at ${ENDPOINT_PATH}, using the models in .env.local.`);
     await context.apply({ files, commands }, 'Apply these changes?');
 
     await addWidgetToLayout(context);
@@ -31,18 +30,13 @@ export const nextjsStep: WizardStep = {
   },
 };
 
-/** The compiled Knowledge Base is rebuilt by `luzia build`, so it is kept out of git. */
-export const ARTIFACT_IGNORE: IgnoreEntry = {
-  entry: `${ARTIFACT_PATH.split('/')[0]!}/`,
-  comment: 'Compiled Knowledge Base (rebuilt by luzia build)',
-};
 
 /** Only the widget part of the integration: puts the configured widget in the root layout (used by the re-run menu). */
 export const nextjsWidgetStep: WizardStep = {
   id: 'nextjs-widget',
   applies: (context) => context.state.project.kind === 'nextjs',
   async run(context) {
-    context.state.endpoint = NEXTJS_ENDPOINT;
+    context.state.endpoint = ENDPOINT_PATH;
     await addWidgetToLayout(context);
   },
 };
@@ -62,7 +56,7 @@ export async function findLayout(context: WizardContext): Promise<{ path: string
 /** Adds the widget to the root layout after confirmation, or prints the snippet when the layout can't be changed safely. */
 async function addWidgetToLayout(context: WizardContext): Promise<void> {
   const appDir = context.state.project.appDir!;
-  const props: WidgetProps = { endpoint: NEXTJS_ENDPOINT, contact: '', ...context.state.widget };
+  const props: WidgetProps = { endpoint: ENDPOINT_PATH, contact: '', ...context.state.widget };
   const { path: layoutPath, content: layout } = await findLayout(context);
 
   const updated = layout === null ? null : layoutWithWidget(layout, props);
@@ -98,14 +92,7 @@ async function prefixScripts(context: WizardContext): Promise<void> {
 }
 
 function installCommands(context: WizardContext): PlannedCommand[] {
-  const manager = context.state.project.packageManager;
-  const runtime = addPackagesCommand(manager, ['@luzia/core', '@luzia/react']);
-  const dev = addPackagesCommand(manager, ['@luzia/cli'], { dev: true });
-  return [runtime, dev].map((command) => ({
-    ...command,
-    stream: true,
-    fallback: `Install the luzIA packages: ${[command.command, ...command.args].join(' ')}`,
-  }));
+  return luziaInstallCommands(context.state.project.packageManager, ['@luzia/core', '@luzia/react']);
 }
 
 /** Where the server route lives in this project, e.g. `app/api/luzia/route.ts`. */
@@ -114,7 +101,7 @@ export function routePath(project: ProjectInfo, extension: 'ts' | 'js' = project
 }
 
 function routeDir(project: ProjectInfo): string {
-  return path.posix.join(project.appDir!, ...NEXTJS_ENDPOINT.split('/').filter(Boolean));
+  return path.posix.join(project.appDir!, ...ENDPOINT_PATH.split('/').filter(Boolean));
 }
 
 function routeFile(context: WizardContext): FileWrite {

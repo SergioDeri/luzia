@@ -1,3 +1,4 @@
+import { LUZIA_BUILD } from './paths.ts';
 import { reactWidget, REACT_WIDGET_IMPORT, type WidgetProps } from './widget-snippet.ts';
 
 /**
@@ -71,7 +72,6 @@ function leadingSpace(line: string): string {
   return /^\s*/.exec(line)![0];
 }
 
-export const LUZIA_BUILD = 'luzia build';
 
 /**
  * `package.json` with the `dev` and `build` scripts prefixed by
