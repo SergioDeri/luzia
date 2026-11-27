@@ -1,0 +1,25 @@
+{
+  "name": "luzia",
+  "version": "0.1.0",
+  "description": "Run the luzIA command line with npx luzia (setup wizard, Knowledge Base build, evals)",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "luzia": "./bin.js"
+  },
+  "files": [
+    "bin.js"
+  ],
+  "keywords": [
+    "luzia",
+    "portfolio",
+    "ai-agent",
+    "cli"
+  ],
+  "dependencies": {
+    "@luzia/cli": "workspace:^"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}

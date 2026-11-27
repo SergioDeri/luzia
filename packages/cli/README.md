@@ -17,10 +17,10 @@ luzia eval  [--file luzia.evals.json] [--kb .luzia/knowledge-base.json]
 ## `luzia init`
 
 ```sh
-npx @luzia/cli init
+npx luzia init
 ```
 
-Once the wizard has installed `@luzia/cli` in your project, later runs can use the local binary: `npx luzia init` (or `pnpm exec luzia init`).
+`npx luzia` runs the `luzia` package, a shortcut to this CLI (`npx @luzia/cli init` works too). Once the wizard has installed `@luzia/cli` in your project, later runs use the local binary.
 
 Run it in your portfolio project. It takes you from nothing to a working Agent: models and keys, Core, Instructions, widget, the integration into your project, the first build and the production variables.
 

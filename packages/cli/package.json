@@ -1,6 +1,6 @@
 {
   "name": "@luzia/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "luzIA command line: set up luzIA, compile a Knowledge Base and run evals",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,8 @@
     "luzia": "./src/bin.ts"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./bin": "./src/bin.ts"
   },
   "files": [
     "dist"
@@ -23,7 +24,8 @@
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
-      }
+      },
+      "./bin": "./dist/bin.js"
     }
   },
   "scripts": {
@@ -32,8 +34,15 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.9.0",
-    "@luzia/core": "workspace:*",
+    "@luzia/core": "workspace:^",
     "ai": "^7.0.182",
     "zod": "^4.6.7"
-  }
+  },
+  "keywords": [
+    "luzia",
+    "portfolio",
+    "ai-agent",
+    "cli",
+    "setup"
+  ]
 }

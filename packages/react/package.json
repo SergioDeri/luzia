@@ -1,6 +1,6 @@
 {
   "name": "@luzia/react",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "React wrapper for the luzIA chat widget",
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
     "typecheck": "tsc -p tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@luzia/widget": "workspace:*"
+    "@luzia/widget": "workspace:^"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -36,5 +36,11 @@
     "happy-dom": "^21.0.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
-  }
+  },
+  "keywords": [
+    "luzia",
+    "portfolio",
+    "chat-widget",
+    "react"
+  ]
 }

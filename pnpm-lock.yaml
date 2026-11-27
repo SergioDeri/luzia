@@ -254,7 +254,7 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0
       '@luzia/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       ai:
         specifier: ^7.0.182
@@ -300,10 +300,16 @@ importers:
         specifier: ^5.1.2
         version: 5.1.2(@types/node@26.6.11)(happy-dom@21.0.4)(vite@8.3.8(@types/node@26.6.11)(esbuild@0.28.2))
 
+  packages/luzia:
+    dependencies:
+      '@luzia/cli':
+        specifier: workspace:^
+        version: link:../cli
+
   packages/react:
     dependencies:
       '@luzia/widget':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../widget
     devDependencies:
       '@types/react':

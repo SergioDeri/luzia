@@ -1,6 +1,6 @@
 {
   "name": "@luzia/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "luzIA server handler and Knowledge Base compiler",
   "license": "MIT",
   "type": "module",
@@ -38,5 +38,13 @@
     "@types/node": "^26.6.11",
     "typescript": "^7.0.2",
     "vitest": "^5.1.2"
-  }
+  },
+  "keywords": [
+    "luzia",
+    "portfolio",
+    "ai-agent",
+    "rag",
+    "chatbot",
+    "recruiting"
+  ]
 }

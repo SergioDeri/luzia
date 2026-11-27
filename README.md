@@ -13,7 +13,7 @@ The Agent always presents itself as "luzIA". It speaks about the Owner in the th
 | [`@luzia/widget`](packages/widget) | `<luzia-widget>` Web Component, also shipped as a single script bundle |
 | [`@luzia/react`](packages/react) | `<LuziaWidget>` React wrapper over the widget |
 
-The quickest way to set it up is **[`npx @luzia/cli init`](#quick-start-npx-luziacli-init)**, run in your portfolio project. It covers both kinds of portfolio:
+The quickest way to set it up is **[`npx luzia init`](#quick-start-npx-luzia-init)**, run in your portfolio project. It covers both kinds of portfolio:
 
 - **Next.js**: the handler is a route in your Next.js portfolio. Same origin, no CORS setup.
 - **Static portfolios** (GitHub Pages, plain HTML, any other framework): the handler is deployed on its own as a Vercel Function, and your site loads the widget with a `<script>` tag.
@@ -22,7 +22,7 @@ If you prefer to do it by hand, the [manual setup](#manual-setup) covers both, f
 
 ## Contents
 
-- [Quick start: `npx @luzia/cli init`](#quick-start-npx-luziacli-init)
+- [Quick start: `npx luzia init`](#quick-start-npx-luzia-init)
 - [Where your data and keys live](#where-your-data-and-keys-live)
 - [Manual setup](#manual-setup)
   - [Next.js on Vercel](#manual-setup-nextjs-on-vercel)
@@ -39,13 +39,13 @@ If you prefer to do it by hand, the [manual setup](#manual-setup) covers both, f
 - [Architecture](#architecture)
 - [Developing luzIA](#developing-luzia)
 
-## Quick start: `npx @luzia/cli init`
+## Quick start: `npx luzia init`
 
 Run the setup wizard in your portfolio project, in a terminal. It asks questions as it goes, so it needs an interactive terminal; from a script or CI job it stops with an error instead of waiting.
 
 ```sh
 cd my-portfolio
-npx @luzia/cli init
+npx luzia init
 ```
 
 It works out what kind of project it is in:
