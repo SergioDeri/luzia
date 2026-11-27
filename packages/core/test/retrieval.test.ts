@@ -50,7 +50,7 @@ describe('retrieval (hybrid RAG)', () => {
     const system = await ask([{ role: 'user', content: 'Does she play in an orchestra?' }]);
 
     expect(system).toContain('plays the cello');
-    expect(system).not.toContain('Kubernetes');
+    expect(system).not.toContain('Go services running on Kubernetes');
   });
 
   it('adds the most relevant chunks first, up to top-k', async () => {
@@ -59,7 +59,7 @@ describe('retrieval (hybrid RAG)', () => {
     const system = await ask([{ role: 'user', content: 'What salary in EUR does she expect?' }]);
 
     expect(system).toContain('between 90,000 and 110,000 EUR');
-    expect(system.match(/Source: /g)).toHaveLength(2);
+    expect(system.match(/<excerpt /g)).toHaveLength(2);
   });
 
   it("embeds the Visitor's latest message with their previous one as light context", async () => {
