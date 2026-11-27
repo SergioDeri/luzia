@@ -55,6 +55,15 @@ describe("luzIA's principles reach the model", () => {
 
     expect(system).toMatch(/reply in the language of the Visitor/i);
     expect(system).toMatch(/even when the Knowledge Base is (written )?in another language/i);
+    expect(system).toMatch(/from the Visitor's latest message alone, never from the Knowledge Base/i);
+  });
+
+  it('keeps internal terms out of replies and calls the Owner by name', async () => {
+    const { system } = await systemPromptFor();
+
+    expect(system).toMatch(/"Owner".*internal words.*never use any of them in a reply/i);
+    expect(system).toMatch(/call the Owner by their name/i);
+    expect(system).not.toMatch(/the information the Owner has shared/i);
   });
 
   it('refuses off-topic tasks', async () => {

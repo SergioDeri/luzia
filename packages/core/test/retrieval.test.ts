@@ -37,6 +37,7 @@ describe('retrieval (hybrid RAG)', () => {
     const system = await ask([{ role: 'user', content: 'Has Ada worked with Kubernetes?' }]);
 
     expect(system).toContain('Go services running on Kubernetes');
+    expect(system).toMatch(/excerpts may be written in a different language[^]*reply in the language of the Visitor/i);
     expect(system).toContain('eight years of experience building payment systems');
     expect(system).toContain('ada@example.com');
     expect(system).toContain('If asked about salary, give the range from the Knowledge Base and suggest a call.');
