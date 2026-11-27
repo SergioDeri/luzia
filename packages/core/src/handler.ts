@@ -45,7 +45,7 @@ export const chatRequestBodySchema = z.object({
     )
     .min(1)
     .refine((messages) => messages.at(-1)?.role === 'user', {
-      message: 'The last message must be from the user.',
+      message: 'The last message must be from the Visitor.',
     }),
 });
 
