@@ -28,6 +28,7 @@
     "@ai-sdk/openai": "^4.0.124",
     "@ai-sdk/provider": "^4.0.39",
     "ai": "^7.0.182",
+    "unpdf": "^1.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

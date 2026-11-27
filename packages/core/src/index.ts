@@ -1,5 +1,14 @@
-export { buildKnowledgeBase, CORE_FILE_NAME, INSTRUCTIONS_FILE_NAME } from './knowledge-base/build.ts';
-export type { BuildKnowledgeBaseOptions } from './knowledge-base/build.ts';
+export {
+  buildKnowledgeBase,
+  buildKnowledgeBaseWithReport,
+  CORE_FILE_NAME,
+  INSTRUCTIONS_FILE_NAME,
+} from './knowledge-base/build.ts';
+export type {
+  BuildKnowledgeBaseOptions,
+  KnowledgeBaseBuildReport,
+  KnowledgeBaseBuildResult,
+} from './knowledge-base/build.ts';
 export { writeCompiledKnowledgeBase } from './knowledge-base/write.ts';
 export { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
 export { COMPILED_KNOWLEDGE_BASE_FORMAT } from './knowledge-base/compiled.ts';
