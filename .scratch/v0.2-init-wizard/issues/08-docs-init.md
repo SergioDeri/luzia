@@ -4,9 +4,9 @@
 
 **Blocked by:** 02, 03, 04, 05, 06, 07
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] README Quick start leads with `npx luzia init` for both Next.js and static portfolios
-- [ ] A short "Where your data and keys live" section covers the Knowledge Base, `.env.local`, production variables and public-repo visibility
-- [ ] The CLI package README documents `luzia init`, its steps and the re-run menu
-- [ ] Docs use glossary terms and contain no AI-assistance attribution
+- [x] README Quick start leads with `npx luzia init` for both Next.js and static portfolios
+- [x] A short "Where your data and keys live" section covers the Knowledge Base, `.env.local`, production variables and public-repo visibility
+- [x] The CLI package README documents `luzia init`, its steps and the re-run menu
+- [x] Docs use glossary terms and contain no AI-assistance attribution
