@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { resolveChatModel, type ChatModelConfig } from './chat-model.ts';
 import type { EmbeddingModelConfig } from './embedding-model.ts';
 import { serverEnv, type Env } from './env.ts';
+import { LuziaConfigError } from './errors.ts';
 import { errorResponse } from './http.ts';
 import type { CompiledKnowledgeBase, KnowledgeBaseChunk } from './knowledge-base/compiled.ts';
 import { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
@@ -28,6 +29,13 @@ export interface LuziaHandlerConfig extends ProtectionConfig {
   embedding?: EmbeddingModelConfig;
   /** Retrieval settings (top-k, vector store). */
   retrieval?: RetrievalOptions;
+  /**
+   * Sampling temperature for the chat model, from 0 to 2: higher is more
+   * varied, lower more predictable. When omitted it is read from
+   * LUZIA_TEMPERATURE, and without it the provider's default is used. The
+   * Agent's facts rules apply at any temperature.
+   */
+  temperature?: number;
   /** Where server-side settings and API keys are read from. Defaults to `process.env`. */
   env?: Env;
 }
@@ -71,6 +79,7 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
 
   // Who luzIA talks about, for the widget's greeting: the Owner's name from the Core's title.
   const owner = { name: ownerName(knowledgeBase.core.text) };
+  const temperature = resolveTemperature(config.temperature, env);
 
   return protection.wrap(async function luziaHandler(request) {
     if (request.method === 'GET') {
@@ -104,6 +113,7 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
       instructions: assembleSystemPrompt({ knowledgeBase, retrievedChunks }),
       messages,
       maxOutputTokens: protection.limits.maxOutputTokens,
+      ...(temperature === undefined ? {} : { temperature }),
     });
 
     return replyResponse(result.fullStream);
@@ -122,4 +132,18 @@ function parseJson(text: string): unknown {
 function ownerName(core: string): string | null {
   const heading = /^#[ \t]+(.+?)[ \t#]*$/m.exec(core);
   return heading ? heading[1]!.trim() : null;
+}
+
+/** Environment variable for the chat model's sampling temperature. */
+export const TEMPERATURE_ENV = 'LUZIA_TEMPERATURE';
+
+/** The configured temperature, else LUZIA_TEMPERATURE, else `undefined` (the provider's default). */
+function resolveTemperature(configured: number | undefined, env: Env): number | undefined {
+  const raw = configured ?? env[TEMPERATURE_ENV];
+  if (raw === undefined || raw === '') return undefined;
+  const value = typeof raw === 'number' ? raw : Number(raw);
+  if (!Number.isFinite(value) || value < 0 || value > 2) {
+    throw new LuziaConfigError(`${TEMPERATURE_ENV} (or temperature) must be a number from 0 to 2, got "${raw}".`);
+  }
+  return value;
 }

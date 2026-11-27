@@ -376,6 +376,7 @@ All are read on the server only. `luzia build` and `luzia eval` read them too, a
 | `LUZIA_MAX_MESSAGES` | `20` | server | Maximum Visitor messages per conversation |
 | `LUZIA_MAX_MESSAGE_LENGTH` | `1000` | server | Maximum characters per Visitor message |
 | `LUZIA_MAX_OUTPUT_TOKENS` | `600` | server | Maximum tokens per Agent reply |
+| `LUZIA_TEMPERATURE` | (provider default) | server | Sampling temperature, 0 to 2: higher is more varied, lower more predictable. luzIA already sounds warm and conversational without it; the facts rules apply at any temperature |
 | `LUZIA_MAX_REPLY_LENGTH` | 8 × max output tokens (`4800`) | server | Maximum characters per Agent reply sent back in the conversation |
 | `LUZIA_MAX_REQUEST_BYTES` | `524288` (512 KiB) | server | Maximum request body size |
 

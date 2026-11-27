@@ -73,6 +73,24 @@ describe("luzIA's principles reach the model", () => {
     expect(system).not.toMatch(/the information the Owner has shared/i);
   });
 
+  it('gives luzIA a warm, conversational personality without loosening the facts rules', async () => {
+    const { system } = await systemPromptFor();
+
+    expect(system).toMatch(/warm/i);
+    expect(system).toMatch(/conversational/i);
+    expect(system).toMatch(/first name/i);
+    // Stock phrases that make replies sound robotic are named so the model avoids them.
+    expect(system).toMatch(/According to the information provided/);
+    // Personality never overrides the facts: the no-inference rule is still there.
+    expect(system).toMatch(/Never infer, guess or extrapolate facts about the Owner/);
+  });
+
+  it('uses the Owner’s name, not guessed pronouns, when the Knowledge Base states none', async () => {
+    const { system } = await systemPromptFor();
+
+    expect(system).toMatch(/never guess (their )?(gender|pronouns)/i);
+  });
+
   it('refuses off-topic tasks', async () => {
     const { system } = await systemPromptFor();
 

@@ -19,7 +19,7 @@ export type {
   KnowledgeBaseChunk,
   KnowledgeBaseDocument,
 } from './knowledge-base/compiled.ts';
-export { createLuziaHandler, chatRequestBodySchema } from './handler.ts';
+export { createLuziaHandler, chatRequestBodySchema, TEMPERATURE_ENV } from './handler.ts';
 export type { ChatRequestBody, LuziaHandler, LuziaHandlerConfig } from './handler.ts';
 export { CHAT_MODEL_ENV, CHAT_PROVIDER_ENV, CHAT_PROVIDERS, resolveChatModel } from './chat-model.ts';
 export type { ChatModelConfig, ChatModelInstance, ChatProvider } from './chat-model.ts';
