@@ -64,6 +64,17 @@ export class Conversation {
     this.#abort?.abort();
   }
 
+  /**
+   * Starts over from `messages` (by default, an empty conversation). Any
+   * streaming reply is cancelled and discarded.
+   */
+  reset(messages: readonly ChatMessage[] = []): void {
+    const streaming = this.#abort;
+    this.#abort = null;
+    streaming?.abort();
+    this.#set({ messages, status: 'idle', error: null });
+  }
+
   async #stream(history: ChatMessage[]): Promise<void> {
     const abort = new AbortController();
     this.#abort = abort;
@@ -72,11 +83,14 @@ export class Conversation {
 
     try {
       for await (const piece of streamReply(this.#options.endpoint(), history, abort.signal)) {
+        if (this.#abort !== abort) return;
         reply += piece;
         this.#set({ ...this.#state, messages: [...history, { role: 'assistant', content: reply }] });
       }
+      if (this.#abort !== abort) return; // reset while streaming
       this.#set({ messages: withReply(history, reply), status: 'idle', error: null });
     } catch (cause) {
+      if (this.#abort !== abort) return;
       const error =
         cause instanceof LuziaRequestError ? cause : new LuziaRequestError('network_error', String(cause));
       // A message the server refused for its length is dropped so the next send doesn't repeat it.

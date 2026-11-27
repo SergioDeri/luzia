@@ -28,6 +28,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   document.body.replaceChildren();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -80,5 +81,44 @@ describe('<LuziaWidget>', () => {
 
     expect(widget.alert()).toMatch(/luzIA is unavailable/i);
     expect(widget.alertLink()).toBe('mailto:jamie@example.com');
+  });
+
+  it('shows the greeting prop and sends a clicked suggested question from the array prop', async () => {
+    const widget = await renderWidget({
+      endpoint: '/api/luzia',
+      greeting: 'Hi! Ask me anything about Jamie.',
+      suggestedQuestions: ['What role is Jamie looking for?', 'Is Jamie open to remote work?'],
+    });
+    await widget.click('luzIA chat');
+
+    expect(widget.greeting()).toBe('Hi! Ask me anything about Jamie.');
+    expect(widget.suggestedQuestions()).toEqual(['What role is Jamie looking for?', 'Is Jamie open to remote work?']);
+
+    await widget.click('Is Jamie open to remote work?');
+    expect(server.requests[0]?.body).toEqual({ messages: [{ role: 'user', content: 'Is Jamie open to remote work?' }] });
+    expect(widget.suggestedQuestions()).toEqual([]);
+  });
+
+  it('updates the suggested questions when the prop changes', async () => {
+    await renderWidget({ endpoint: '/api/luzia', suggestedQuestions: ['Old question?'] });
+    const widget = await renderWidget({ endpoint: '/api/luzia', suggestedQuestions: ['New question?'] });
+    await widget.click('luzIA chat');
+
+    expect(widget.suggestedQuestions()).toEqual(['New question?']);
+  });
+
+  it('renders inline with the mode prop and applies the theme prop', async () => {
+    const widget = await renderWidget({ endpoint: '/api/luzia', mode: 'inline', theme: 'dark' });
+
+    expect(widget.isChatOpen()).toBe(true);
+    expect(widget.hasButton('luzIA chat')).toBe(false);
+    expect(widget.chatColors()).toEqual({ surface: '#18181b', text: '#f4f4f5' });
+  });
+
+  it('applies theme custom properties passed through the style prop', async () => {
+    const widget = await renderWidget({ endpoint: '/api/luzia', className: 'portfolio-chat', style: { '--luzia-accent': '#e11d48' } });
+
+    expect(widget.host.classList.contains('portfolio-chat')).toBe(true);
+    expect(getComputedStyle(widget.button('luzIA chat')).backgroundColor).toBe('#e11d48');
   });
 });

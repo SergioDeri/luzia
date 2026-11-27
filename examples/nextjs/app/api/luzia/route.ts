@@ -3,7 +3,9 @@ import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
 import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json';
 
 // The chat model is read from LUZIA_CHAT_PROVIDER / LUZIA_CHAT_MODEL and the
-// provider's API key (e.g. ANTHROPIC_API_KEY), all server-side only.
+// provider's API key (e.g. ANTHROPIC_API_KEY), all server-side only. Once the
+// Knowledge Base has files besides the Core and Instructions, the embeddings
+// model is read from LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL.
 // Same-origin requests need no origin configuration; to serve the widget on
 // another site, set LUZIA_ALLOWED_ORIGINS (comma-separated) or `allowedOrigins`.
 const handler = createLuziaHandler({

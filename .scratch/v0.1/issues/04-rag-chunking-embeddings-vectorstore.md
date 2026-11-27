@@ -4,12 +4,12 @@
 
 **Blocked by:** 01 — Tracer bullet: Core-only chat end to end over HTTP
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Markdown files other than Core and Instructions are chunked by heading; sections over the size limit are sub-split
-- [ ] Chunks keep source file and heading metadata in the compiled artifact, together with their vectors and the embedding model id
-- [ ] Embeddings provider and model are configured independently of the chat provider
-- [ ] A `VectorStore` interface exists with an in-memory implementation loaded from the compiled artifact
-- [ ] Seam 1 test: a question about a fact that lives only in a non-Core file results in that chunk reaching the model, while the Core is still sent in full
-- [ ] The server refuses to start, with a clear message, when the artifact's embedding model differs from the configured one
-- [ ] Fake embedding model used in tests; no network required
+- [x] Markdown files other than Core and Instructions are chunked by heading; sections over the size limit are sub-split
+- [x] Chunks keep source file and heading metadata in the compiled artifact, together with their vectors and the embedding model id
+- [x] Embeddings provider and model are configured independently of the chat provider
+- [x] A `VectorStore` interface exists with an in-memory implementation loaded from the compiled artifact
+- [x] Seam 1 test: a question about a fact that lives only in a non-Core file results in that chunk reaching the model, while the Core is still sent in full
+- [x] The server refuses to start, with a clear message, when the artifact's embedding model differs from the configured one
+- [x] Fake embedding model used in tests; no network required

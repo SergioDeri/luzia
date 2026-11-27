@@ -28,6 +28,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.body.replaceChildren();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -61,6 +62,21 @@ describe('conversation limit', () => {
 
     expect(widget.alert()).toMatch(/reached the message limit/i);
     expect(widget.alertLink()).toBeNull();
+  });
+
+  it('lets the Visitor chat again after starting a new conversation', async () => {
+    const widget = await openWidget({ contact: 'jamie@example.com' });
+    server.failNextWith(429, 'conversation_limit_reached');
+    await ask(widget, 'One more question');
+    expect(widget.canSend()).toBe(false);
+
+    await widget.click('New conversation');
+
+    expect(widget.canSend()).toBe(true);
+    expect(widget.alert()).toBeNull();
+    expect(widget.transcript()).toEqual([]);
+    await ask(widget, 'Fresh question');
+    expect(server.requests.at(-1)?.body).toEqual({ messages: [{ role: 'user', content: 'Fresh question' }] });
   });
 });
 
