@@ -461,6 +461,31 @@ export function integrationAnswers(options: IntegrationAnswers = {}): ScriptedAn
   ];
 }
 
+export interface AstroAnswers {
+  /** The adapter to add for on-demand rendering; `null` when one is already set up, so nothing is asked. */
+  adapter?: 'vercel' | 'node' | 'netlify' | 'cloudflare' | 'skip' | null;
+  /** Installing the packages and creating the endpoint (and the default for the other two). */
+  apply?: boolean;
+  /** Adding the widget to the layout; `null` when no layout is recognised, so nothing is asked. */
+  layout?: boolean | null;
+  /** Prefixing the `dev` and `build` scripts with `luzia build`; `null` when nothing would change. */
+  scripts?: boolean | null;
+}
+
+/** Astro integration: the adapter (if missing), the endpoint and packages, the layout, the scripts. */
+export function astroAnswers(options: AstroAnswers = {}): ScriptedAnswer[] {
+  const apply = options.apply ?? true;
+  const adapter = options.adapter === undefined ? 'vercel' : options.adapter;
+  const layout = options.layout === undefined ? apply : options.layout;
+  const scripts = options.scripts === undefined ? apply : options.scripts;
+  return [
+    ...(adapter === null ? [] : [answer.select(/adapter/i, adapter)]),
+    answer.confirm(/Apply these changes/, apply),
+    ...(layout === null ? [] : [answer.confirm(/Add the widget to/, layout)]),
+    ...(scripts === null ? [] : [answer.confirm(/luzia build.*dev.*build/, scripts)]),
+  ];
+}
+
 export interface StandaloneAnswers {
   /** Answers to the portfolio domains question, in order: each one rejected is asked again. */
   domains?: string[];

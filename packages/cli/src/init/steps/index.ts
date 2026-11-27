@@ -1,4 +1,5 @@
 import type { WizardStep } from '../step.ts';
+import { astroStep } from './astro.ts';
 import { buildStep } from './build.ts';
 import { coreStep } from './core.ts';
 import { instructionsStep } from './instructions.ts';
@@ -22,6 +23,7 @@ export const wizardSteps: WizardStep[] = [
   instructionsStep,
   widgetStep,
   nextjsStep,
+  astroStep,
   standaloneStep,
   buildStep,
   productionStep,

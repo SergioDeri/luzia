@@ -13,9 +13,10 @@ The Agent always presents itself as "luzIA". It speaks about the Owner in the th
 | [`luzia-widget`](packages/widget) | `<luzia-widget>` Web Component, also shipped as a single script bundle |
 | [`luzia-react`](packages/react) | `<LuziaWidget>` React wrapper over the widget |
 
-The quickest way to set it up is **[`npx luzia init`](#quick-start-npx-luzia-init)**, run in your portfolio project. It covers both kinds of portfolio:
+The quickest way to set it up is **[`npx luzia init`](#quick-start-npx-luzia-init)**, run in your portfolio project. It covers these kinds of portfolio:
 
 - **Next.js**: the handler is a route in your Next.js portfolio. Same origin, no CORS setup.
+- **Astro**: the handler is an on-demand endpoint in your Astro site (it adds an adapter if you have none) and the widget goes in your layout. Your pages stay static.
 - **Static portfolios** (GitHub Pages, plain HTML, any other framework): the handler is deployed on its own as a Vercel Function, and your site loads the widget with a `<script>` tag.
 
 If you prefer to do it by hand, the [manual setup](#manual-setup) covers both, for Vercel. Working examples: [`examples/nextjs`](examples/nextjs) and [`examples/standalone`](examples/standalone).
@@ -51,7 +52,8 @@ npx luzia init
 It works out what kind of project it is in:
 
 - **A Next.js app** (a `next` dependency and an `app/` or `src/app/` folder): luzIA is added to the app in place, with a server route at `/api/luzia` and the widget in your root layout.
-- **Anything else** (a static portfolio, or an empty folder): the folder is set up as a standalone luzIA server to deploy on Vercel, and the wizard prints the `<script>` snippet to paste into your portfolio's HTML.
+- **An Astro site** (an `astro` dependency and an Astro config or `src/pages/`): luzIA adds an on-demand endpoint at `/api/luzia` (and an adapter, after you pick one, if the site has none) and the widget in your layout. Your pages, `public/` and how the site is built are left alone.
+- **Anything else** (a static portfolio, or an empty folder): the folder is set up as a standalone luzIA server to deploy on Vercel, and the wizard prints the `<script>` snippet to paste into your portfolio's HTML. If the folder already builds or serves a site, how it is built and served is never changed.
 
 Then it walks you through:
 

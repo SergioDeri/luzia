@@ -69,7 +69,7 @@ function printSummary(context: WizardContext): void {
   context.say('');
   context.say('Next steps');
   const tryIt =
-    context.state.project.kind === 'nextjs'
+    context.state.project.kind !== 'standalone'
       ? `Start the dev server with ${runScriptCommand(manager, 'dev')} and ask the Agent about yourself.`
       : 'Try the server locally with vercel dev (allow your local portfolio’s origin, e.g. http://localhost:8080, in api/luzia.ts).';
   for (const step of [

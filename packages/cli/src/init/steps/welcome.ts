@@ -25,9 +25,14 @@ export const welcomeStep: WizardStep = {
     }
     if (project.kind === 'nextjs') {
       context.say(`Detected a Next.js app (App Router in ${project.appDir}/) using ${project.packageManager}.`);
+    } else if (project.kind === 'astro') {
+      context.say(
+        `Detected an Astro site using ${project.packageManager}. luzIA adds a chat endpoint and the widget; ` +
+          'your pages and how your site is built stay as they are.',
+      );
     } else {
       context.say(
-        'No Next.js app found here (a "next" dependency and an app/ or src/app/ folder), so luzIA sets up a ' +
+        'No Next.js app or Astro site found here, so luzIA sets up a ' +
           `standalone server in this folder using ${project.packageManager}, plus a <script> snippet for your portfolio’s HTML.`,
       );
     }

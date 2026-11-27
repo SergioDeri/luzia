@@ -6,8 +6,11 @@ export type PackageManager = 'pnpm' | 'npm' | 'yarn' | 'bun';
 
 /** What `luzia init` found about the Owner's project. */
 export interface ProjectInfo {
-  /** `nextjs`: a Next.js App Router app, integrated in place. `standalone`: anything else. */
-  kind: 'nextjs' | 'standalone';
+  /**
+   * `nextjs`: a Next.js App Router app and `astro`: an Astro site, both integrated
+   * in place. `standalone`: anything else, which gets a separate luzIA server.
+   */
+  kind: 'nextjs' | 'astro' | 'standalone';
   packageManager: PackageManager;
   /** The App Router directory relative to the project, e.g. `app` or `src/app`; `null` when not Next.js. */
   appDir: string | null;
@@ -15,6 +18,14 @@ export interface ProjectInfo {
   pagesRouter: boolean;
   /** Whether the folder root serves a static site (an `index.html` at the root). */
   staticRoot: boolean;
+  /**
+   * Whether the folder already builds or serves a site of its own (a build
+   * script, a root `index.html` or a `public/` folder). luzIA then never
+   * changes how it is built or served: no output directory, no placeholder page.
+   */
+  ownSite: boolean;
+  /** For an Astro site: its adapter (`@astrojs/vercel`…, `null` without one) and major version. */
+  astro: { adapter: string | null; major: number | null } | null;
   /** Whether the project uses TypeScript (has a `tsconfig.json`). */
   typescript: boolean;
   /** The parsed `package.json`, `null` if there is none. */
@@ -45,16 +56,38 @@ export async function detectProject(cwd: string): Promise<ProjectInfo> {
   const appDir = hasNext ? (['app', 'src/app'].find((dir) => existsSync(path.join(cwd, dir))) ?? null) : null;
 
   const pagesRouter = hasNext && !appDir && ['pages', 'src/pages'].some((dir) => existsSync(path.join(cwd, dir)));
+  const astro = detectAstro(cwd, packageJson);
+  const staticRoot = existsSync(path.join(cwd, 'index.html'));
 
   return {
-    kind: appDir ? 'nextjs' : 'standalone',
+    kind: appDir ? 'nextjs' : astro ? 'astro' : 'standalone',
     packageManager: detectPackageManager(cwd, packageJson),
     appDir,
     pagesRouter,
-    staticRoot: existsSync(path.join(cwd, 'index.html')),
+    staticRoot,
+    ownSite: staticRoot || Boolean(packageJson?.scripts?.build) || existsSync(path.join(cwd, 'public')),
+    astro,
     typescript: existsSync(path.join(cwd, 'tsconfig.json')),
     packageJson,
   };
+}
+
+const ASTRO_ADAPTERS = ['@astrojs/vercel', '@astrojs/node', '@astrojs/netlify', '@astrojs/cloudflare'];
+
+/** An Astro site: `astro` in package.json and an Astro config or `src/pages/`. */
+function detectAstro(cwd: string, packageJson: PackageJson | null): ProjectInfo['astro'] {
+  const deps = { ...packageJson?.dependencies, ...packageJson?.devDependencies };
+  if (!deps.astro) return null;
+  const hasConfig = ['mjs', 'js', 'ts', 'mts', 'cjs'].some((ext) => existsSync(path.join(cwd, `astro.config.${ext}`)));
+  if (!hasConfig && !existsSync(path.join(cwd, 'src/pages'))) return null;
+  const major = Number(/(\d+)/.exec(deps.astro)?.[1]);
+  return { adapter: ASTRO_ADAPTERS.find((name) => deps[name]) ?? null, major: Number.isFinite(major) ? major : null };
+}
+
+/** How to run a binary of the project's packages with extra arguments, e.g. `pnpm astro add vercel`. */
+export function execArgs(manager: PackageManager, bin: string, args: string[]): { command: string; args: string[] } {
+  const runner = { pnpm: ['pnpm', bin], npm: ['npx', bin], yarn: ['yarn', bin], bun: ['bunx', bin] }[manager];
+  return { command: runner[0]!, args: [...runner.slice(1), ...args] };
 }
 
 function detectPackageManager(cwd: string, packageJson: PackageJson | null): PackageManager {

@@ -16,9 +16,11 @@ import { readEnvFile } from './env-file.ts';
 import { CORE_PATH, KNOWLEDGE_BASE_DIR } from './steps/core.ts';
 import { INSTRUCTIONS_PATH } from './steps/instructions.ts';
 import { ENV_FILE } from './steps/models.ts';
+import { findAstroLayouts } from './astro-layout.ts';
+import { astroEndpointPath } from './steps/astro.ts';
 import { findLayout, routePath } from './steps/nextjs.ts';
 import { readAllowedOrigins, STANDALONE_FUNCTION } from './steps/standalone.ts';
-import { readHtmlWidget, readReactWidget, type WidgetProps } from './widget-snippet.ts';
+import { readAstroWidget, readHtmlWidget, readReactWidget, type WidgetProps } from './widget-snippet.ts';
 
 /** What an earlier `luzia init` (or the Owner) already set up in the project. */
 export interface ExistingSetup {
@@ -133,6 +135,17 @@ async function integration(
   context: WizardContext,
 ): Promise<Pick<ExistingSetup, 'route' | 'widget' | 'server' | 'widgetOptions'>> {
   const { project } = context.state;
+  if (project.kind === 'astro') {
+    let route: string | null = null;
+    for (const extension of ['ts', 'js'] as const) {
+      if ((await context.readFile(astroEndpointPath(project, extension))) !== null) route = route ?? astroEndpointPath(project, extension);
+    }
+    for (const layout of await findAstroLayouts(context)) {
+      const widget = readAstroWidget(layout.content);
+      if (widget) return { route, widget: layout.path, server: null, widgetOptions: widget };
+    }
+    return { route, widget: null, server: null, widgetOptions: {} };
+  }
   if (project.kind !== 'nextjs') {
     const source = await context.readFile(STANDALONE_FUNCTION);
     const server = source === null ? null : { path: STANDALONE_FUNCTION, origins: readAllowedOrigins(source) };

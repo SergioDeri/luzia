@@ -8,6 +8,7 @@ import { ARTIFACT_PATH, buildStep } from './steps/build.ts';
 import { coreStep, KNOWLEDGE_BASE_DIR } from './steps/core.ts';
 import { instructionsStep } from './steps/instructions.ts';
 import { ENV_FILE, modelsStep } from './steps/models.ts';
+import { astroStep, astroWidgetStep } from './steps/astro.ts';
 import { nextjsStep, nextjsWidgetStep } from './steps/nextjs.ts';
 import { productionStep } from './steps/production.ts';
 import { standaloneOriginsStep, standaloneStep, standaloneWidgetStep } from './steps/standalone.ts';
@@ -33,7 +34,7 @@ function sectionsFor(context: WizardContext, setup: ExistingSetup): Section[] {
     { id: 'models', label: 'Models and keys', steps: [modelsStep] },
     { id: 'core', label: 'Core', steps: [coreStep] },
     { id: 'instructions', label: 'Instructions', steps: [instructionsStep] },
-    { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep, standaloneWidgetStep] },
+    { id: 'widget', label: 'Widget', steps: [widgetStep, nextjsWidgetStep, astroWidgetStep, standaloneWidgetStep] },
     ...(setup.server ? [{ id: 'origins' as const, label: 'Allowed origins of the server', steps: [standaloneOriginsStep] }] : []),
     { id: 'production', label: 'Production variables', steps: [productionStep] },
   ];
@@ -47,12 +48,13 @@ function sectionsFor(context: WizardContext, setup: ExistingSetup): Section[] {
 const INTEGRATION_STEPS: WizardStep[] = [
   { ...widgetStep, id: 'widget-if-unset', applies: (context) => !context.state.widget },
   nextjsStep,
+  astroStep,
   standaloneStep,
   { ...buildStep, id: 'build-if-missing', applies: (context) => !existsSync(path.join(context.cwd, ARTIFACT_PATH)) },
 ];
 
 function integrationMissing(context: WizardContext, setup: ExistingSetup): boolean {
-  return context.state.project.kind === 'nextjs' ? setup.route === null : setup.server === null;
+  return context.state.project.kind === 'standalone' ? setup.server === null : setup.route === null;
 }
 
 const DONE = 'done';
@@ -146,9 +148,9 @@ function printSetup(context: WizardContext, setup: ExistingSetup): void {
   }
   const keys = Object.keys(setup.env).filter((name) => !name.startsWith('LUZIA_'));
   context.say(`  API keys in ${ENV_FILE}: ${keys.length ? `${keys.join(', ')} (values hidden)` : 'none'}`);
-  if (project.kind === 'nextjs') {
+  if (project.kind !== 'standalone') {
     context.say(`  Route: ${setup.route ?? 'not found'}`);
-    context.say(`  Widget: ${setup.widget ? `in ${setup.widget}` : 'not found in the root layout'}`);
+    context.say(`  Widget: ${setup.widget ? `in ${setup.widget}` : 'not found in the layout'}`);
   } else if (setup.server) {
     const origins = setup.server.origins ? setup.server.origins.join(', ') : 'not readable';
     context.say(`  Server: ${setup.server.path} (allowed origins: ${origins})`);

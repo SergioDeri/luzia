@@ -87,11 +87,22 @@ The Instructions are written from fixed templates, with no model call, shown in 
 - adds the `<LuziaWidget>` with your widget options to the root layout. If there is no root layout, or it can't be changed safely, the wizard prints the exact snippet to add yourself instead of guessing;
 - starts the `dev` and `build` scripts with `luzia build &&`, so the compiled Knowledge Base is always fresh.
 
-**6b. Standalone server.** For a static portfolio, this folder becomes the luzIA server:
+**6b. Astro integration.** Each change is shown and confirmed on its own:
+
+- if the site has no adapter, asks which one to add (Vercel, Netlify, Node or Cloudflare) and runs `astro add <adapter> --yes`: Astro needs one to answer chat requests on demand, while your pages stay static;
+- installs `luzia-core` and `luzia-widget`, and `luzia-cli` as a dev dependency, with your package manager;
+- creates the endpoint `src/pages/api/luzia.ts` (`.js` in a JavaScript project) with `export const prerender = false`. It reads the models and keys with `getSecret` from `astro:env/server`, so secrets come from the server environment or `.env` files at runtime and are never bundled;
+- adds `.luzia/` (the compiled Knowledge Base) to `.gitignore`;
+- adds the `<luzia-widget>` with your widget options, and the `<script>` that registers it, at the end of `<body>` in your layout (it asks which one if there are several). If none can be changed safely, it prints the exact snippet instead;
+- starts the `dev` and `build` scripts with `luzia build &&`.
+
+Your pages, `public/` and the build output are never changed.
+
+**6c. Standalone server.** For a static portfolio, this folder becomes the luzIA server:
 
 - asks for your portfolio's domain(s), e.g. `jamie.example.com, www.jamie.example.com`, which become the **allowed origins** (bare domains get `https://`; `www.` and the bare domain are different origins, so list both if you use both);
 - asks for the server's URL once deployed. If you haven't deployed yet, leave it empty: the snippet uses the placeholder `https://YOUR-LUZIA-SERVER.vercel.app/api/luzia`, and the summary reminds you to replace it;
-- after one confirmation, writes `api/luzia.ts` (the Vercel Function, with your allowed origins), `package.json` (`"type": "module"` and `luzia build` as the build script), `vercel.json` (ships the compiled Knowledge Base with the function; merged into an existing one), a placeholder `public/index.html` and `.gitignore` entries, and installs `luzia-core` and `luzia-cli`;
+- after one confirmation, writes `api/luzia.ts` (the Vercel Function, with your allowed origins), `package.json` (`"type": "module"` and `luzia build` as the build script), `vercel.json` (ships the compiled Knowledge Base with the function; merged into an existing one) and `.gitignore` entries — plus, only in a folder that doesn't build or serve a site of its own, an output directory and a placeholder `public/index.html` — and installs `luzia-core` and `luzia-cli`;
 - prints the snippet for your portfolio's HTML: the `<script>` tag for `<head>` and the `<luzia-widget>` with your options for `<body>`.
 
 Deploy the folder as its own Vercel project (framework preset: Other).

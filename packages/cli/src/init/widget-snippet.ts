@@ -40,6 +40,63 @@ export function htmlWidget(props: WidgetProps, indent = ''): string[] {
   return lines.map((line) => `${indent}${line}`);
 }
 
+/**
+ * The `<luzia-widget …></luzia-widget>` element for an `.astro` file. Astro
+ * escapes plain attribute values itself, so lists and text it would change
+ * are written as expressions (`{JSON.stringify([...])}`, `{"…"}`).
+ */
+export function astroWidget(props: WidgetProps, indent = ''): string[] {
+  const lines = ['<luzia-widget'];
+  for (const [name, value] of propEntries(props)) {
+    const attribute = name === 'suggestedQuestions' ? 'suggested-questions' : name;
+    if (typeof value === 'string') {
+      lines.push(`  ${attribute}=${/^[^"&{}<>\n\\]*$/.test(value) ? `"${value}"` : `{${JSON.stringify(value)}}`}`);
+    } else {
+      lines.push(`  ${attribute}={JSON.stringify(${JSON.stringify(value)})}`);
+    }
+  }
+  lines.push('></luzia-widget>');
+  return lines.map((line) => `${indent}${line}`);
+}
+
+/**
+ * The attributes of the first `<luzia-widget …>` in an `.astro` file, written
+ * as plain values or as the expressions {@link astroWidget} writes; `null`
+ * when there is no widget.
+ */
+export function readAstroWidget(source: string): Partial<WidgetProps> | null {
+  const tag = /<luzia-widget\b/.exec(source);
+  if (!tag) return null;
+  const values: Record<string, unknown> = {};
+  let at = tag.index + tag[0].length;
+  for (;;) {
+    at += /^\s*/.exec(source.slice(at))![0].length;
+    const raw = /^[A-Za-z_][\w-]*/.exec(source.slice(at))?.[0];
+    if (!raw) break;
+    at += raw.length;
+    const name = raw === 'suggested-questions' ? 'suggestedQuestions' : raw;
+    if (source[at] !== '=') continue;
+    at++;
+    const quote = source[at];
+    if (quote === '"' || quote === "'") {
+      const end = source.indexOf(quote, at + 1);
+      if (end < 0) break;
+      values[name] = htmlUnescape(source.slice(at + 1, end));
+      at = end + 1;
+    } else if (quote === '{') {
+      const end = closingBrace(source, at);
+      if (end < 0) break;
+      const expression = source.slice(at + 1, end).trim();
+      const stringified = /^JSON\.stringify\(([\s\S]*)\)$/.exec(expression);
+      values[name] = jsValue(stringified ? stringified[1]! : expression);
+      at = end + 1;
+    } else {
+      break;
+    }
+  }
+  return widgetProps(values);
+}
+
 /** The widget's script bundle, which registers `<luzia-widget>` as soon as it loads. */
 export const WIDGET_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/luzia-widget/dist/luzia-widget.js';
 

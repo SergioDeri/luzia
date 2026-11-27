@@ -1,6 +1,6 @@
 {
   "name": "luzia",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Run the luzIA command line with npx luzia (setup wizard, Knowledge Base build, evals)",
   "license": "MIT",
   "author": "Sergio Deri <sergio.deri@astrocode.uy>",

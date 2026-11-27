@@ -75,12 +75,13 @@ const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.sv
 
 /**
  * The avatar shown at the top of the chat. A URL (or, outside Next.js, a path
- * as the portfolio serves it) is used as given. In a Next.js app a local image
+ * as the portfolio serves it) is used as given. In a Next.js app or Astro site a local image
  * is served from `public/`: one already there is used in place, any other is
  * copied there (after a confirm). Empty keeps luzIA's own icon.
  */
 async function chooseAvatar(context: WizardContext, current: string | undefined): Promise<string | undefined> {
-  const nextjs = context.state.project.kind === 'nextjs';
+  // Next.js and Astro serve public/ from the site root, so a local image can be copied there.
+  const nextjs = context.state.project.kind !== 'standalone';
   context.say('The chat shows luzIA large at the top, like a video call: use your photo, a logo, anything you like.');
   for (;;) {
     const answer = (

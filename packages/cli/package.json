@@ -1,6 +1,6 @@
 {
   "name": "luzia-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "luzIA command line: set up luzIA, compile a Knowledge Base and run evals",
   "license": "MIT",
   "author": "Sergio Deri <sergio.deri@astrocode.uy>",
