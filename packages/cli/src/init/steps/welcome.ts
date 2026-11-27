@@ -17,6 +17,12 @@ export const welcomeStep: WizardStep = {
         'and anyone can read it if your repository is public.',
     );
     context.say('');
+    if (project.pagesRouter) {
+      throw new Error(
+        'This is a Next.js app using the Pages Router, which luzia init doesn’t set up yet. Nothing was changed. ' +
+          'Follow the manual setup in the luzIA README (Manual setup: Next.js on Vercel) to add the server route and the widget.',
+      );
+    }
     if (project.kind === 'nextjs') {
       context.say(`Detected a Next.js app (App Router in ${project.appDir}/) using ${project.packageManager}.`);
     } else {

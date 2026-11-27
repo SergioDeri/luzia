@@ -11,6 +11,10 @@ export interface ProjectInfo {
   packageManager: PackageManager;
   /** The App Router directory relative to the project, e.g. `app` or `src/app`; `null` when not Next.js. */
   appDir: string | null;
+  /** A Next.js app using only the Pages Router (`pages/` or `src/pages/`, no App Router), which `luzia init` doesn't integrate yet. */
+  pagesRouter: boolean;
+  /** Whether the folder root serves a static site (an `index.html` at the root). */
+  staticRoot: boolean;
   /** Whether the project uses TypeScript (has a `tsconfig.json`). */
   typescript: boolean;
   /** The parsed `package.json`, `null` if there is none. */
@@ -40,10 +44,14 @@ export async function detectProject(cwd: string): Promise<ProjectInfo> {
   const hasNext = Boolean(packageJson?.dependencies?.next ?? packageJson?.devDependencies?.next);
   const appDir = hasNext ? (['app', 'src/app'].find((dir) => existsSync(path.join(cwd, dir))) ?? null) : null;
 
+  const pagesRouter = hasNext && !appDir && ['pages', 'src/pages'].some((dir) => existsSync(path.join(cwd, dir)));
+
   return {
     kind: appDir ? 'nextjs' : 'standalone',
     packageManager: detectPackageManager(cwd, packageJson),
     appDir,
+    pagesRouter,
+    staticRoot: existsSync(path.join(cwd, 'index.html')),
     typescript: existsSync(path.join(cwd, 'tsconfig.json')),
     packageJson,
   };

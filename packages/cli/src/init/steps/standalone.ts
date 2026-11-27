@@ -262,6 +262,12 @@ async function vercelFiles(context: WizardContext): Promise<FileWrite[]> {
     const functions = { ...config.functions, [STANDALONE_FUNCTION]: { ...config.functions?.[STANDALONE_FUNCTION], ...include } };
     return [{ path: 'vercel.json', content: `${JSON.stringify({ ...config, functions }, null, 2)}\n` }];
   }
+  if (context.state.project.staticRoot) {
+    // The folder already serves a site from its root: leave how Vercel serves it alone.
+    context.say('index.html at the root keeps being served as it is: luzIA only adds its function to this deployment.');
+    const config = { $schema: 'https://openapi.vercel.sh/vercel.json', functions: { [STANDALONE_FUNCTION]: include } };
+    return [{ path: 'vercel.json', content: `${JSON.stringify(config, null, 2)}\n` }];
+  }
   const config = {
     $schema: 'https://openapi.vercel.sh/vercel.json',
     outputDirectory: 'public',

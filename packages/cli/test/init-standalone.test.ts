@@ -12,6 +12,39 @@ import {
 } from './support/init-harness.ts';
 
 describe('luzia init: standalone server', () => {
+  it('keeps a static site served from the folder root: no output directory and no placeholder page', async () => {
+    const cwd = await emptyProject({ 'index.html': '<!doctype html><title>Jamie</title><h1>Jamie Rivera</h1>\n' });
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({ integration: standaloneAnswers() }),
+      chatModel: unusedChatModel().model,
+    });
+
+    expect(run.code).toBe(0);
+    const vercel = JSON.parse(await readProjectFile(cwd, 'vercel.json'));
+    expect(vercel.functions['api/luzia.ts'].includeFiles).toBe('.luzia/**');
+    expect(vercel.outputDirectory).toBeUndefined();
+    expect(await projectFileExists(cwd, 'public/index.html')).toBe(false);
+    expect(await readProjectFile(cwd, 'index.html')).toContain('Jamie Rivera');
+    expect(run.stdout).toMatch(/index\.html.*keeps being served/i);
+  });
+
+  it('stops before changing anything in a Next.js Pages Router app, pointing to the manual setup', async () => {
+    const cwd = await emptyProject({
+      'package.json': JSON.stringify({ name: 'portfolio', dependencies: { next: '16.0.0', react: '19.0.0' } }),
+      'pages/index.tsx': 'export default function Home() { return null; }\n',
+    });
+
+    const run = await runInit(cwd, { answers: [], chatModel: unusedChatModel().model });
+
+    expect(run.code).not.toBe(0);
+    expect(run.stderr).toMatch(/Pages Router/);
+    expect(run.stderr).toMatch(/manual setup/i);
+    expect(await projectFileExists(cwd, '.env.local')).toBe(false);
+    expect(await projectFileExists(cwd, 'api/luzia.ts')).toBe(false);
+    expect(run.commands).toEqual([]);
+  });
+
   it('sets up a standalone server in an empty folder and prints the script-tag snippet', async () => {
     const cwd = await emptyProject();
     const chatModel = unusedChatModel();
