@@ -40,6 +40,17 @@ export function htmlWidget(props: WidgetProps, indent = ''): string[] {
   return lines.map((line) => `${indent}${line}`);
 }
 
+/** The widget's script bundle, which registers `<luzia-widget>` as soon as it loads. */
+export const WIDGET_SCRIPT_URL = 'https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js';
+
+/**
+ * Everything an HTML page needs: the `<script type="module">` tag that loads
+ * the widget bundle, then the {@link htmlWidget} element, as lines.
+ */
+export function htmlWidgetSnippet(props: WidgetProps, indent = ''): string[] {
+  return [`${indent}<script type="module" src="${WIDGET_SCRIPT_URL}"></script>`, '', ...htmlWidget(props, indent)];
+}
+
 /** The props that are set, in a fixed order. */
 function propEntries(props: WidgetProps): [string, string | string[]][] {
   const entries: [string, string | string[] | undefined][] = [

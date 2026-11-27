@@ -30,6 +30,16 @@ export async function ownerProject(
   return cwd;
 }
 
+/** An empty temporary folder (the standalone path), with optional `files`. */
+export async function emptyProject(files: Record<string, string> = {}): Promise<string> {
+  const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-init-'));
+  for (const [file, content] of Object.entries(files)) {
+    await mkdir(path.dirname(path.join(cwd, file)), { recursive: true });
+    await writeFile(path.join(cwd, file), content);
+  }
+  return cwd;
+}
+
 export async function readProjectFile(cwd: string, file: string): Promise<string> {
   return readFile(path.join(cwd, file), 'utf8');
 }
@@ -346,6 +356,26 @@ export function integrationAnswers(options: IntegrationAnswers = {}): ScriptedAn
     answer.confirm(/Apply these changes/, apply),
     ...(layout === null ? [] : [answer.confirm(/Add the widget to/, layout)]),
     ...(scripts === null ? [] : [answer.confirm(/luzia build.*dev.*build/, scripts)]),
+  ];
+}
+
+export interface StandaloneAnswers {
+  /** Answers to the portfolio domains question, in order: each one rejected is asked again. */
+  domains?: string[];
+  /** The deployed server URL; empty (the default) means not deployed yet. */
+  serverUrl?: string;
+  /** Scaffolding the server and installing the packages. */
+  apply?: boolean;
+}
+
+/** Standalone integration: portfolio domains, the server URL, then confirming the scaffold. */
+export function standaloneAnswers(options: StandaloneAnswers = {}): ScriptedAnswer[] {
+  return [
+    ...(options.domains ?? ['jamie.example.com, https://www.jamie.example.com']).map((domains) =>
+      answer.text(/portfolio.*domain/i, domains),
+    ),
+    answer.text(/server.*URL/i, options.serverUrl ?? ''),
+    answer.confirm(/Set up the luzIA server/, options.apply ?? true),
   ];
 }
 

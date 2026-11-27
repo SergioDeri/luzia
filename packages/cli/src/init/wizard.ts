@@ -55,8 +55,12 @@ function printSummary(context: WizardContext): void {
   }
   context.say('');
   context.say('Next steps');
+  const tryIt =
+    context.state.project.kind === 'nextjs'
+      ? `Start the dev server with ${runScriptCommand(manager, 'dev')} and ask the Agent about yourself.`
+      : 'Try the server locally with vercel dev (allow your local portfolio’s origin, e.g. http://localhost:8080, in api/luzia.ts).';
   for (const step of [
-    `Start the dev server with ${runScriptCommand(manager, 'dev')} and ask the Agent about yourself.`,
+    tryIt,
     `After changing files in knowledge-base/, run ${luzia} build again.`,
     ...context.changes.next,
     `Check the Agent’s answers with ${luzia} eval (see ${luzia} help for the eval file format).`,

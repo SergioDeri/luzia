@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — Tracer bullet: `luzia init` on Next.js with a Core from questions; 04 — Widget configuration and Next.js layout/scripts changes
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Non-Next.js projects take the standalone path
-- [ ] The standalone server is scaffolded with a build step running `luzia build`
-- [ ] Allowed origins are set from the entered domains; invalid origins are rejected with a clear message
-- [ ] The printed snippet includes endpoint, contact from the Core, greeting, suggested questions, theme and mode
-- [ ] Seam tests cover the empty-folder fixture end to end
+- [x] Non-Next.js projects take the standalone path
+- [x] The standalone server is scaffolded with a build step running `luzia build`
+- [x] Allowed origins are set from the entered domains; invalid origins are rejected with a clear message
+- [x] The printed snippet includes endpoint, contact from the Core, greeting, suggested questions, theme and mode
+- [x] Seam tests cover the empty-folder fixture end to end
