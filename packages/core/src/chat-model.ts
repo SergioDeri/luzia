@@ -10,14 +10,35 @@ import { providerModelFromEnv, resolveProviderModel, type ProviderModelConfig } 
 /** A ready-made AI SDK language model (any provider). */
 export type ChatModelInstance = Exclude<LanguageModel, string>;
 
+/**
+ * Built-in chat providers: display name, where the API key is read from, how a
+ * model is made, and a few suggested model ids (any other id works too).
+ */
 export const CHAT_PROVIDERS = {
-  anthropic: { apiKeyEnv: 'ANTHROPIC_API_KEY', create: (apiKey: string, model: string) => createAnthropic({ apiKey })(model) },
-  openai: { apiKeyEnv: 'OPENAI_API_KEY', create: (apiKey: string, model: string) => createOpenAI({ apiKey })(model) },
+  anthropic: {
+    label: 'Anthropic (Claude)',
+    apiKeyEnv: 'ANTHROPIC_API_KEY',
+    suggestedModels: ['claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5'],
+    create: (apiKey: string, model: string) => createAnthropic({ apiKey })(model),
+  },
+  openai: {
+    label: 'OpenAI',
+    apiKeyEnv: 'OPENAI_API_KEY',
+    suggestedModels: ['gpt-5.5', 'gpt-5.4-mini'],
+    create: (apiKey: string, model: string) => createOpenAI({ apiKey })(model),
+  },
   google: {
+    label: 'Google (Gemini)',
     apiKeyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
+    suggestedModels: ['gemini-3.5-flash', 'gemini-3.5-flash-lite'],
     create: (apiKey: string, model: string) => createGoogle({ apiKey })(model),
   },
-  groq: { apiKeyEnv: 'GROQ_API_KEY', create: (apiKey: string, model: string) => createGroq({ apiKey })(model) },
+  groq: {
+    label: 'Groq',
+    apiKeyEnv: 'GROQ_API_KEY',
+    suggestedModels: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'],
+    create: (apiKey: string, model: string) => createGroq({ apiKey })(model),
+  },
 } as const;
 
 export type ChatProvider = keyof typeof CHAT_PROVIDERS;

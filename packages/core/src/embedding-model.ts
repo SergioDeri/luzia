@@ -11,14 +11,19 @@ export type EmbeddingModelInstance = Exclude<EmbeddingModel, string>;
 /**
  * Built-in embeddings providers. Anthropic has no embeddings API, so an Owner
  * chatting with Claude picks one of these (with its own key) for retrieval.
+ * Each has a display name and a few suggested model ids (any other id works too).
  */
 export const EMBEDDING_PROVIDERS = {
   openai: {
+    label: 'OpenAI',
     apiKeyEnv: 'OPENAI_API_KEY',
+    suggestedModels: ['text-embedding-3-small', 'text-embedding-3-large'],
     create: (apiKey: string, model: string) => createOpenAI({ apiKey }).embeddingModel(model),
   },
   google: {
+    label: 'Google (Gemini)',
     apiKeyEnv: 'GOOGLE_GENERATIVE_AI_API_KEY',
+    suggestedModels: ['gemini-embedding-001', 'gemini-embedding-2'],
     create: (apiKey: string, model: string) => createGoogle({ apiKey }).embeddingModel(model),
   },
 } as const;

@@ -4,15 +4,15 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `luzia init` is registered in the CLI and fails fast with a clear message when not run in an interactive terminal
-- [ ] Prompter, command runner and drafting chat model are injectable via the CLI `io`, with real implementations used by the binary
-- [ ] Next.js App Router projects and their package manager (from the lockfile) are detected; luzIA packages are installed via the runner with that manager
-- [ ] Chat and embeddings providers offered come from core's provider tables; each has suggested model ids and free text is allowed; Anthropic/Groq are not offered for embeddings, with a short explanation
-- [ ] Only the keys the chosen providers need are asked, once per provider, without echo; secrets never appear in output
-- [ ] luzIA variables are written only to `.env.local`, merged with existing non-luzIA variables; `.env.local` is added to `.gitignore` when not already ignored
-- [ ] The questions path produces a Core with no model call
-- [ ] The server route (chat + CORS preflight) is created; `luzia build` runs and its report is shown; a final summary lists created/changed files and next steps
-- [ ] Every write to an existing file shows a diff and requires confirmation; cancelling before a step's confirmation leaves that step's files untouched
-- [ ] Seam tests cover all of the above on a Next.js fixture project
+- [x] `luzia init` is registered in the CLI and fails fast with a clear message when not run in an interactive terminal
+- [x] Prompter, command runner and drafting chat model are injectable via the CLI `io`, with real implementations used by the binary
+- [x] Next.js App Router projects and their package manager (from the lockfile) are detected; luzIA packages are installed via the runner with that manager
+- [x] Chat and embeddings providers offered come from core's provider tables; each has suggested model ids and free text is allowed; Anthropic/Groq are not offered for embeddings, with a short explanation
+- [x] Only the keys the chosen providers need are asked, once per provider, without echo; secrets never appear in output
+- [x] luzIA variables are written only to `.env.local`, merged with existing non-luzIA variables; `.env.local` is added to `.gitignore` when not already ignored
+- [x] The questions path produces a Core with no model call
+- [x] The server route (chat + CORS preflight) is created; `luzia build` runs and its report is shown; a final summary lists created/changed files and next steps
+- [x] Every write to an existing file shows a diff and requires confirmation; cancelling before a step's confirmation leaves that step's files untouched
+- [x] Seam tests cover all of the above on a Next.js fixture project

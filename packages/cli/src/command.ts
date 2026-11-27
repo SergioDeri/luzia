@@ -1,3 +1,7 @@
+import type { ChatModelInstance } from '@luzia/core';
+import type { CommandRunner } from './init/command-runner.ts';
+import type { Prompter } from './init/prompter.ts';
+
 /** What a command can use to talk to the outside world. Injected so commands are testable. */
 export interface CliIo {
   /** Directory relative paths are resolved against. */
@@ -6,6 +10,18 @@ export interface CliIo {
   stderr(line: string): void;
   /** Server-side environment (API keys, model settings). Defaults to `process.env`. */
   env?: Record<string, string | undefined>;
+  /**
+   * Asks the Owner questions (`luzia init`). Only present when running in an
+   * interactive terminal; commands that need it fail fast without it.
+   */
+  prompter?: Prompter;
+  /** Runs external commands (package install, Vercel CLI). Defaults to running real processes. */
+  runner?: CommandRunner;
+  /**
+   * The chat model `luzia init` drafts with. Defaults to the model the Owner
+   * chooses in the wizard, with the key they enter.
+   */
+  chatModel?: ChatModelInstance;
 }
 
 export interface CliCommand {
