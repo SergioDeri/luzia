@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "luzia:build": "luzia build",
+    "luzia:eval": "luzia build && luzia eval",
     "predev": "luzia build",
     "dev": "next dev",
     "prebuild": "luzia build",
