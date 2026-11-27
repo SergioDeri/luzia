@@ -4,10 +4,10 @@
 
 **Blocked by:** 02 — Core drafted from the CV; 03 — Instructions by topic; 04 — Widget configuration; 06 — Production variables
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An existing setup is detected and summarised before the menu
-- [ ] Each menu entry runs only its section and leaves others untouched
-- [ ] Overwrites always show a diff and require confirmation
-- [ ] Changing the embeddings model rebuilds the Knowledge Base
-- [ ] Seam tests use an existing-setup fixture and cover each menu entry
+- [x] An existing setup is detected and summarised before the menu
+- [x] Each menu entry runs only its section and leaves others untouched
+- [x] Overwrites always show a diff and require confirmation
+- [x] Changing the embeddings model rebuilds the Knowledge Base
+- [x] Seam tests use an existing-setup fixture and cover each menu entry

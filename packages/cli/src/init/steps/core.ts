@@ -1,6 +1,6 @@
 import { CORE_FILE_NAME } from '@luzia/core';
 import { ALREADY_CONFIRMED, type WizardContext } from '../context.ts';
-import { coreSources, type CoreSource, type ProposedCore } from '../core-sources/index.ts';
+import { coreSources, parseCore, type CoreSource, type ProposedCore } from '../core-sources/index.ts';
 import type { WizardStep } from '../step.ts';
 
 export const KNOWLEDGE_BASE_DIR = 'knowledge-base';
@@ -33,7 +33,10 @@ export const coreStep: WizardStep = {
       if (choice === 'edit') {
         const edited = await context.prompter.editor({ message: 'Edit your Core', initialValue: core.text, extension: '.md' });
         if (edited.trim()) {
-          core = { ...core, text: `${edited.trim()}\n` };
+          // The name and contact later steps use are the ones the edited text states.
+          const text = `${edited.trim()}\n`;
+          const stated = parseCore(text);
+          core = { ...core, text, ownerName: stated.ownerName || core.ownerName, contact: stated.contact };
           break;
         }
         context.warn('The edited Core was empty, so the draft was kept.');
@@ -47,8 +50,13 @@ export const coreStep: WizardStep = {
       return;
     }
     const { redo: _redo, ...draft } = core;
+    // Accepting the Core shown in full is the confirmation, unless it replaces one already saved (a re-run):
+    // then the Owner confirms again after seeing the diff.
+    const replacing = (await context.readFile(CORE_PATH)) !== null;
+    const files = [{ path: CORE_PATH, content: draft.text }, ...(draft.files ?? [])];
+    if (replacing && !(await context.apply({ files }, 'Replace your current Core with this one?'))) return;
+    if (!replacing) await context.apply({ files }, ALREADY_CONFIRMED);
     context.state.core = draft;
-    await context.apply({ files: [{ path: CORE_PATH, content: draft.text }, ...(draft.files ?? [])] }, ALREADY_CONFIRMED);
   },
 };
 

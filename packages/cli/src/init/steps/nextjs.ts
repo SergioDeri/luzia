@@ -2,7 +2,7 @@ import path from 'node:path';
 import type { FileWrite, PlannedCommand, WizardContext } from '../context.ts';
 import { gitignoreIgnores } from '../env-file.ts';
 import { layoutWithWidget, LUZIA_BUILD, packageJsonWithLuziaBuild } from '../nextjs-layout.ts';
-import { addPackagesCommand } from '../project.ts';
+import { addPackagesCommand, type ProjectInfo } from '../project.ts';
 import type { WizardStep } from '../step.ts';
 import { reactWidget, REACT_WIDGET_IMPORT, type WidgetProps } from '../widget-snippet.ts';
 import { ARTIFACT_PATH } from './build.ts';
@@ -40,21 +40,33 @@ async function artifactIgnore(context: WizardContext): Promise<FileWrite[]> {
   return [{ path: '.gitignore', content: `${before}# Compiled Knowledge Base (rebuilt by luzia build)\n${artifactDir}/\n` }];
 }
 
+/** Only the widget part of the integration: puts the configured widget in the root layout (used by the re-run menu). */
+export const nextjsWidgetStep: WizardStep = {
+  id: 'nextjs-widget',
+  applies: (context) => context.state.project.kind === 'nextjs',
+  async run(context) {
+    context.state.endpoint = NEXTJS_ENDPOINT;
+    await addWidgetToLayout(context);
+  },
+};
+
 const LAYOUT_FILES = ['layout.tsx', 'layout.jsx', 'layout.js', 'layout.ts'];
+
+/** The root layout: its path (the first candidate when there is none) and content, `null` when missing. */
+export async function findLayout(context: WizardContext): Promise<{ path: string; content: string | null }> {
+  const appDir = context.state.project.appDir!;
+  for (const file of LAYOUT_FILES) {
+    const content = await context.readFile(`${appDir}/${file}`);
+    if (content !== null) return { path: `${appDir}/${file}`, content };
+  }
+  return { path: `${appDir}/${LAYOUT_FILES[0]}`, content: null };
+}
 
 /** Adds the widget to the root layout after confirmation, or prints the snippet when the layout can't be changed safely. */
 async function addWidgetToLayout(context: WizardContext): Promise<void> {
   const appDir = context.state.project.appDir!;
   const props: WidgetProps = { endpoint: NEXTJS_ENDPOINT, contact: '', ...context.state.widget };
-  let layoutPath = `${appDir}/${LAYOUT_FILES[0]}`;
-  let layout: string | null = null;
-  for (const file of LAYOUT_FILES) {
-    layout = await context.readFile(`${appDir}/${file}`);
-    if (layout !== null) {
-      layoutPath = `${appDir}/${file}`;
-      break;
-    }
-  }
+  const { path: layoutPath, content: layout } = await findLayout(context);
 
   const updated = layout === null ? null : layoutWithWidget(layout, props);
   if (updated === null) {
@@ -99,12 +111,19 @@ function installCommands(context: WizardContext): PlannedCommand[] {
   }));
 }
 
+/** Where the server route lives in this project, e.g. `app/api/luzia/route.ts`. */
+export function routePath(project: ProjectInfo, extension: 'ts' | 'js' = project.typescript ? 'ts' : 'js'): string {
+  return `${routeDir(project)}/route.${extension}`;
+}
+
+function routeDir(project: ProjectInfo): string {
+  return path.posix.join(project.appDir!, ...NEXTJS_ENDPOINT.split('/').filter(Boolean));
+}
+
 function routeFile(context: WizardContext): FileWrite {
-  const { appDir, typescript } = context.state.project;
-  const routeDir = path.posix.join(appDir!, ...NEXTJS_ENDPOINT.split('/').filter(Boolean));
-  const artifactImport = path.posix.relative(routeDir, ARTIFACT_PATH);
+  const artifactImport = path.posix.relative(routeDir(context.state.project), ARTIFACT_PATH);
   return {
-    path: `${routeDir}/route.${typescript ? 'ts' : 'js'}`,
+    path: routePath(context.state.project),
     content: `import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
 // Generated from knowledge-base/ by \`luzia build\`.
 import compiledKnowledgeBase from '${artifactImport}';
