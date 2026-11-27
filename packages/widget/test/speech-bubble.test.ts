@@ -136,4 +136,56 @@ describe("luzIA's speech bubble", () => {
     expect(widget.speechBubble()).toBeNull();
     expect(widget.visibleTranscript().at(-1)).toEqual({ role: 'assistant', text: 'She builds web products.' });
   });
+
+  it('lets the bubble go 2 seconds after the mouse leaves, even for a long reply', async () => {
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+    const reply = await ask(widget, 'Tell me everything.');
+    const long = 'A long reply. '.repeat(40);
+    await reply.push(long);
+
+    widget.hoverSpeechBubble();
+    await reply.end();
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(widget.speechBubble()).toBe(long);
+
+    widget.hoverSpeechBubble(false);
+    await vi.advanceTimersByTimeAsync(2_500);
+    expect(widget.speechBubble()).toBeNull();
+    expect(widget.visibleTranscript().at(-1)).toEqual({ role: 'assistant', text: long });
+  });
+
+  it('lets the bubble go 2 seconds after the mouse leaves while the reply is still streaming', async () => {
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+    const reply = await ask(widget, 'Tell me everything.');
+    await reply.push('A long reply. '.repeat(40));
+
+    widget.hoverSpeechBubble();
+    widget.hoverSpeechBubble(false);
+    await reply.push('And more.');
+    await reply.end();
+    await vi.advanceTimersByTimeAsync(2_500);
+
+    expect(widget.speechBubble()).toBeNull();
+  });
+
+  it('moves the bubble’s reply into the history when the next reply starts, and says the new one', async () => {
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+    const first = await ask(widget, 'First?');
+    await first.push('First answer.');
+    await first.end();
+    widget.hoverSpeechBubble();
+
+    const second = await ask(widget, 'Second?');
+    await second.push('Second answer.');
+
+    expect(widget.speechBubble()).toBe('Second answer.');
+    expect(widget.visibleTranscript()).toEqual([
+      { role: 'user', text: 'First?' },
+      { role: 'assistant', text: 'First answer.' },
+      { role: 'user', text: 'Second?' },
+    ]);
+  });
 });

@@ -51,6 +51,9 @@ export type LuziaWidgetTheme = 'light' | 'dark' | 'auto';
 const BaseElement: typeof HTMLElement =
   typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
 
+/** How long the speech bubble stays after the mouse leaves it. */
+const SPEECH_AFTER_HOVER_MS = 2_000;
+
 /** luzIA's own icon, in the accent colours so it follows the Owner's theme. */
 const LUZIA_ICON = `<svg viewBox="0 0 32 32" width="100%" height="100%" focusable="false">
   <circle cx="16" cy="16" r="16" fill="var(--luzia-accent-contrast)" />
@@ -208,6 +211,8 @@ class View {
   #speechTimer: ReturnType<typeof setTimeout> | undefined;
   /** While the mouse is over the bubble, it stays (the Visitor may be reading or scrolling it). */
   #speechHovered = false;
+  /** Once the mouse has been over the bubble and left, it goes soon after (the Visitor has seen it). */
+  #speechVisited = false;
   readonly #messages: HTMLOListElement;
   readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
@@ -234,6 +239,7 @@ class View {
     this.#speechText = root.querySelector('.speech-text')!;
     this.#speech.addEventListener('mouseenter', () => {
       this.#speechHovered = true;
+      this.#speechVisited = true;
       clearTimeout(this.#speechTimer);
       this.#speechTimer = undefined;
       this.#speech.classList.remove('leaving');
@@ -386,7 +392,8 @@ class View {
       if (!stillThisReply) this.#stopSpeaking();
       else if (this.#speechTimer === undefined && !this.#speechHovered) {
         const text = state.messages[last]!.content;
-        this.#speechTimer = setTimeout(() => this.#fadeSpeech(), Math.min(10_000, 4_000 + text.length * 40));
+        const delay = this.#speechVisited ? SPEECH_AFTER_HOVER_MS : Math.min(10_000, 4_000 + text.length * 40);
+        this.#speechTimer = setTimeout(() => this.#fadeSpeech(), delay);
       }
     }
     // The reply being said stays out of the history until the bubble is gone.
@@ -400,11 +407,8 @@ class View {
     // Nothing to say yet (the reply hasn't started): no empty bubble.
     this.#speech.hidden = text === '';
     this.#stage.toggleAttribute('data-saying', !this.#speech.hidden);
-    const box = this.#speechText;
-    // Follow the reply as it grows, like subtitles, unless the Visitor scrolled up to read its beginning.
-    const following = box.scrollHeight - box.scrollTop - box.clientHeight < 24;
-    if (box.textContent !== text) box.textContent = text;
-    if (following) box.scrollTop = box.scrollHeight;
+    // The bubble shows the reply from its beginning; the Visitor scrolls to read the rest.
+    if (this.#speechText.textContent !== text) this.#speechText.textContent = text;
   }
 
   #fadeSpeech(): void {
@@ -421,7 +425,9 @@ class View {
     this.#speaking = null;
     this.#speech.hidden = true;
     this.#speechHovered = false;
+    this.#speechVisited = false;
     this.#stage.removeAttribute('data-saying');
+    this.#speechText.scrollTop = 0;
     this.#speech.classList.remove('leaving');
     this.#speechText.textContent = '';
   }
