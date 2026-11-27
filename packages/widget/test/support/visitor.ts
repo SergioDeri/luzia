@@ -134,6 +134,19 @@ export function visitor(host: Element) {
     },
     messageBoxValue: () => messageBox().value,
     /** The conversation as rendered: who said what, in order. */
+    /** The text in luzIA's speech bubble over the picture, or `null` when there is none on screen. */
+    speechBubble: (): string | null => {
+      const bubble = chat()?.querySelector<HTMLElement>('.speech');
+      return bubble && isOnScreen(bubble) ? (bubble.textContent ?? '') : null;
+    },
+    /** Whether the speech bubble is hidden from screen readers (replies are announced by the status region). */
+    speechBubbleIsDecorative: (): boolean => chat()?.querySelector('.speech')?.getAttribute('aria-hidden') === 'true',
+    /** The conversation as the Visitor sees it in the history below the picture (messages on screen only). */
+    visibleTranscript: () =>
+      [...root().querySelectorAll<HTMLElement>('[data-role]')].filter(isOnScreen).map((el) => ({
+        role: el.dataset.role,
+        text: el.textContent ?? '',
+      })),
     transcript: () =>
       [...root().querySelectorAll<HTMLElement>('[data-role]')].map((el) => ({
         role: el.dataset.role,

@@ -66,6 +66,7 @@ const TEMPLATE = `
     </header>
     <div class="stage">
       <span class="avatar" aria-hidden="true"></span>
+      <p class="speech" aria-hidden="true" hidden><span class="speech-text"></span></p>
     </div>
     <div class="body">
       <p class="greeting" hidden></p>
@@ -200,6 +201,11 @@ class View {
   readonly #greeting: HTMLElement;
   readonly #avatar: HTMLElement;
   readonly #stage: HTMLElement;
+  readonly #speech: HTMLElement;
+  readonly #speechText: HTMLElement;
+  /** The reply luzIA is "saying" in the speech bubble (index in the conversation), kept out of the history until it ends. */
+  #speaking: number | null = null;
+  #speechTimer: ReturnType<typeof setTimeout> | undefined;
   readonly #messages: HTMLOListElement;
   readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
@@ -222,6 +228,8 @@ class View {
     this.#greeting = root.querySelector('.greeting')!;
     this.#avatar = root.querySelector('.avatar')!;
     this.#stage = root.querySelector('.stage')!;
+    this.#speech = root.querySelector('.speech')!;
+    this.#speechText = root.querySelector('.speech-text')!;
     this.#messages = root.querySelector('.messages')!;
     this.#announcer = root.querySelector('.announcer')!;
     this.#suggestions = root.querySelector('.suggestions')!;
@@ -346,6 +354,63 @@ class View {
     this.#announcer.textContent = state.status === 'idle' && last?.role === 'assistant' ? last.content : '';
   }
 
+  /**
+   * Like a video call, luzIA "says" each reply in a bubble over the picture as
+   * it streams in; it stays a few seconds after it ends, then fades and the
+   * reply takes its place in the history. A new question, an error or a reset
+   * moves it to the history at once; a restored conversation never uses it.
+   * The bubble is decorative: the status region announces each reply.
+   */
+  #updateSpeech(state: ConversationState, streaming: boolean): void {
+    const last = state.messages.length - 1;
+    const lastIsReply = state.messages[last]?.role === 'assistant';
+    if (streaming && lastIsReply) {
+      if (this.#speaking !== last) this.#stopSpeaking();
+      this.#speaking = last;
+      clearTimeout(this.#speechTimer);
+      this.#showSpeech(state.messages[last]!.content);
+    } else if (this.#speaking !== null) {
+      const stillThisReply = this.#speaking === last && state.status === 'idle';
+      if (!stillThisReply) this.#stopSpeaking();
+      else if (this.#speechTimer === undefined) {
+        const text = state.messages[last]!.content;
+        this.#speechTimer = setTimeout(() => this.#fadeSpeech(), Math.min(10_000, 4_000 + text.length * 40));
+      }
+    }
+    // The reply being said stays out of the history until the bubble is gone.
+    [...this.#messages.children].forEach((item, index) => {
+      (item as HTMLElement).hidden = index === this.#speaking;
+    });
+  }
+
+  #showSpeech(text: string): void {
+    this.#speech.classList.remove('leaving');
+    // Nothing to say yet (the reply hasn't started): no empty bubble.
+    this.#speech.hidden = text === '';
+    this.#stage.toggleAttribute('data-saying', !this.#speech.hidden);
+    if (this.#speechText.textContent !== text) this.#speechText.textContent = text;
+    // Long replies keep their latest lines in view, like subtitles.
+    this.#speechText.scrollTop = this.#speechText.scrollHeight;
+  }
+
+  #fadeSpeech(): void {
+    this.#speech.classList.add('leaving');
+    this.#speechTimer = setTimeout(() => {
+      this.#stopSpeaking();
+      this.#render(this.#conversation.state);
+    }, 400);
+  }
+
+  #stopSpeaking(): void {
+    clearTimeout(this.#speechTimer);
+    this.#speechTimer = undefined;
+    this.#speaking = null;
+    this.#speech.hidden = true;
+    this.#stage.removeAttribute('data-saying');
+    this.#speech.classList.remove('leaving');
+    this.#speechText.textContent = '';
+  }
+
   #render(state: ConversationState): void {
     // Reuse existing message nodes so a streaming reply only updates its text.
     state.messages.forEach((message, index) => {
@@ -363,9 +428,10 @@ class View {
     while (this.#messages.children.length > state.messages.length) this.#messages.lastElementChild?.remove();
     // Suggestions only help the Visitor start; once the conversation has begun they go away.
     this.#suggestions.hidden = state.messages.length > 0 || this.#suggestions.children.length === 0;
+    const streaming = state.status === 'streaming';
+    this.#updateSpeech(state, streaming);
     this.#body.scrollTop = this.#body.scrollHeight;
 
-    const streaming = state.status === 'streaming';
     // Like a video call: luzIA's avatar lights up while the reply comes in.
     this.#stage.toggleAttribute('data-speaking', streaming);
     this.#messages.setAttribute('aria-busy', String(streaming));

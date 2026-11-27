@@ -58,6 +58,13 @@ describe("luzIA's principles reach the model", () => {
     expect(system).toMatch(/from the Visitor's latest message alone, never from the Knowledge Base/i);
   });
 
+  it('asks for plain text, since the chat shows replies as they are (no markdown)', async () => {
+    const { system } = await systemPromptFor();
+
+    expect(system).toMatch(/no markdown/i);
+    expect(system).toMatch(/\*\*/);
+  });
+
   it('keeps internal terms out of replies and calls the Owner by name', async () => {
     const { system } = await systemPromptFor();
 

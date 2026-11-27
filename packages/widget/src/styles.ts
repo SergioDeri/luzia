@@ -9,6 +9,7 @@
  * - `--luzia-border`: input and inline-panel borders
  * - `--luzia-font`: font family
  * - `--luzia-inline-height`: height of the chat in inline mode
+ * - `--luzia-speech-tail-top`: how far down the speech bubble's tail points (towards luzIA's mouth)
  * - `--luzia-avatar-size`: height of luzIA's picture at the top of the chat (default: 7rem to 13rem, by screen height)
  *
  * Every control is at least 44px square (a comfortable tap target) and shows
@@ -136,6 +137,59 @@ export const styles = `
     transition: filter 0.2s ease;
   }
   .avatar svg { aspect-ratio: 1; margin-bottom: 0.75rem; height: calc(100% - 0.75rem); }
+  /* While luzIA is saying a reply, she steps to the left and the speech bubble takes the right side. */
+  .stage[data-saying] { justify-content: flex-start; gap: 0.75rem; }
+  .speech {
+    position: relative;
+    flex: 1;
+    align-self: flex-start;
+    min-width: 0;
+    margin: 0.75rem 0 0;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--luzia-border);
+    border-radius: 0.9rem;
+    background: var(--luzia-surface);
+    color: var(--luzia-text);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+    font-size: 0.875rem;
+    line-height: 1.4;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+  }
+  .speech-text {
+    display: block;
+    max-height: calc(var(--luzia-avatar-size, clamp(7rem, 30vh, 13rem)) - 2.75rem);
+    overflow: hidden;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* The tail points back at luzIA's mouth (tune its height with --luzia-speech-tail-top). */
+  .speech::before,
+  .speech::after {
+    content: '';
+    position: absolute;
+    border-block-style: solid;
+    border-block-color: transparent;
+    border-inline-end-style: solid;
+  }
+  .speech::before {
+    top: var(--luzia-speech-tail-top, 1.6rem);
+    left: -0.6rem;
+    border-block-width: 0.45rem;
+    border-inline-end-width: 0.6rem;
+    border-inline-end-color: var(--luzia-border);
+  }
+  .speech::after {
+    top: calc(var(--luzia-speech-tail-top, 1.6rem) + 1px);
+    left: calc(-0.6rem + 1.5px);
+    border-block-width: calc(0.45rem - 1px);
+    border-inline-end-width: 0.6rem;
+    border-inline-end-color: var(--luzia-surface);
+  }
+  .speech.leaving { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .speech { transition: none; }
+  }
   /* While a reply streams in, a soft glow follows the picture's outline. */
   .stage[data-speaking] .avatar img,
   .stage[data-speaking] .avatar svg {
