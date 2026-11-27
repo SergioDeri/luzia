@@ -416,6 +416,10 @@ export interface WidgetAnswers {
   edit?: { greeting?: string; questions?: [string?, string?, string?] };
   theme?: 'auto' | 'light' | 'dark';
   mode?: 'bubble' | 'inline';
+  /** Answers to the avatar question, in order (several when one is rejected); default: Enter, luzIA's icon. */
+  avatar?: string | string[];
+  /** Answer to "copy the image into public/?", asked only for a local image in a Next.js app. */
+  copyAvatar?: boolean;
 }
 
 /** Widget: keep the proposed greeting and questions (or edit them), then theme and mode. */
@@ -431,6 +435,8 @@ export function widgetAnswers(options: WidgetAnswers = {}): ScriptedAnswer[] {
       : []),
     answer.select(/theme/i, options.theme ?? 'auto'),
     answer.select(/bubble|inline/i, options.mode ?? 'bubble'),
+    ...[options.avatar ?? ''].flat().map((value) => answer.text(/avatar/i, value)),
+    ...(options.copyAvatar === undefined ? [] : [answer.confirm(/Copy .* to public\//, options.copyAvatar)]),
   ];
 }
 

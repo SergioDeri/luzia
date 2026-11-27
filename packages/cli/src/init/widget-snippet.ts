@@ -105,7 +105,7 @@ export function readHtmlWidget(source: string): Partial<WidgetProps> | null {
 /** Only the values that are valid widget props. */
 function widgetProps(values: Record<string, unknown>): Partial<WidgetProps> {
   const props: Partial<WidgetProps> = {};
-  for (const name of ['endpoint', 'contact', 'greeting'] as const) {
+  for (const name of ['endpoint', 'contact', 'greeting', 'avatar'] as const) {
     const value = values[name];
     if (typeof value === 'string' && value) props[name] = value;
   }
@@ -167,6 +167,7 @@ function propEntries(props: WidgetProps): [string, string | string[]][] {
     ['suggestedQuestions', props.suggestedQuestions?.length ? props.suggestedQuestions : undefined],
     ['theme', props.theme],
     ['mode', props.mode],
+    ['avatar', props.avatar],
   ];
   return entries.filter((entry): entry is [string, string | string[]] => entry[1] !== undefined && entry[1] !== '');
 }

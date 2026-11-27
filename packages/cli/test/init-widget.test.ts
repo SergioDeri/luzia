@@ -6,6 +6,9 @@ import { runInitWizard } from '../src/init/wizard.ts';
 import {
   answer,
   coreAnswers,
+  emptyProject,
+  projectFileExists,
+  standaloneAnswers,
   fakeRunner,
   reviewAnswer,
   scriptedPrompter,
@@ -274,3 +277,70 @@ describe('luzia init: widget copy from a drafted Core', () => {
     );
   });
 });
+
+describe('luzia init: avatar', () => {
+  const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+
+  it("shows luzIA's icon when the Owner leaves the avatar empty", async () => {
+    const cwd = await ownerProject('nextjs-app');
+
+    const run = await runInit(cwd, { answers: fullRunAnswers() });
+
+    expect(run.code).toBe(0);
+    expect(await readProjectFile(cwd, 'app/layout.tsx')).not.toContain('avatar=');
+  });
+
+  it("copies a local image into public/ and points the widget's avatar at it", async () => {
+    const cwd = await ownerProject('nextjs-app', { 'photos/me.png': PNG });
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({ widget: widgetAnswers({ avatar: 'photos/me.png', copyAvatar: true }) }),
+    });
+
+    expect(run.code).toBe(0);
+    const { readFile } = await import('node:fs/promises');
+    const path = await import('node:path');
+    expect(await readFile(path.join(cwd, 'public/luzia-avatar.png'))).toEqual(PNG);
+    expect(await readProjectFile(cwd, 'app/layout.tsx')).toContain('avatar="/luzia-avatar.png"');
+  });
+
+  it('uses an image already in public/ or a URL as it is, without copying', async () => {
+    const inPublic = await ownerProject('nextjs-app', { 'public/img/me.jpg': PNG });
+    const fromPublic = await runInit(inPublic, { answers: fullRunAnswers({ widget: widgetAnswers({ avatar: 'public/img/me.jpg' }) }) });
+    expect(fromPublic.code).toBe(0);
+    expect(await readProjectFile(inPublic, 'app/layout.tsx')).toContain('avatar="/img/me.jpg"');
+
+    const withUrl = await ownerProject('nextjs-app');
+    const fromUrl = await runInit(withUrl, {
+      answers: fullRunAnswers({ widget: widgetAnswers({ avatar: 'https://example.com/me.webp' }) }),
+    });
+    expect(fromUrl.code).toBe(0);
+    expect(await readProjectFile(withUrl, 'app/layout.tsx')).toContain('avatar="https://example.com/me.webp"');
+    expect(await projectFileExists(withUrl, 'public/luzia-avatar.webp')).toBe(false);
+  });
+
+  it('asks again when the path is not an image file in the project', async () => {
+    const cwd = await ownerProject('nextjs-app', { 'notes.txt': 'hello' });
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({ widget: widgetAnswers({ avatar: ['photos/missing.png', 'notes.txt', ''] }) }),
+    });
+
+    expect(run.code).toBe(0);
+    expect(run.stderr).toMatch(/photos\/missing\.png.*not found/i);
+    expect(run.stderr).toMatch(/notes\.txt.*not an image/i);
+    expect(await readProjectFile(cwd, 'app/layout.tsx')).not.toContain('avatar=');
+  });
+
+  it('puts the avatar as given into the standalone snippet', async () => {
+    const cwd = await emptyProject();
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({ widget: widgetAnswers({ avatar: '/images/me.jpg' }), integration: standaloneAnswers() }),
+    });
+
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain('avatar="/images/me.jpg"');
+  });
+});
+

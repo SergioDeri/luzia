@@ -42,6 +42,8 @@ export interface WidgetOptions {
   suggestedQuestions?: string[];
   theme?: 'auto' | 'light' | 'dark';
   mode?: 'bubble' | 'inline';
+  /** Image URL for the chat header (as the browser loads it); luzIA's icon when unset. */
+  avatar?: string;
 }
 
 /** Everything the steps have learned so far, shared between steps. */

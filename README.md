@@ -428,6 +428,7 @@ Origin checks stop other websites from using your server through Visitors' brows
 | `suggested-questions` | `suggestedQuestions` | (none) | Questions the Visitor can click to send, shown until the conversation starts. Attribute: a JSON array of strings; prop: an array |
 | `mode` | `mode` | `bubble` | `bubble` (floating button that opens the chat) or `inline` (the chat rendered in place, always open, for a section such as "Ask luzIA about me") |
 | `theme` | `theme` | `light` | `light`, `dark`, or `auto` to follow the Visitor's `prefers-color-scheme` |
+| `avatar` | `avatar` | luzIA's icon | URL of an image shown next to the "luzIA" title in the chat header (your photo, a logo…). Without one, luzIA's own icon is shown, in the theme's accent colours |
 
 ```html
 <section id="ask">

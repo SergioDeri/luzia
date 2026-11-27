@@ -1,6 +1,9 @@
 import type { ChatModelInstance } from '@luzia/core';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
+import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { CoreDraft, WidgetOptions, WizardContext } from '../context.ts';
 import { required } from '../prompter.ts';
 import type { WizardStep } from '../step.ts';
@@ -62,9 +65,59 @@ export const widgetStep: WizardStep = {
       ],
     });
 
-    context.state.widget = { contact, ...copy, theme, mode };
+    const avatar = await chooseAvatar(context, current?.avatar);
+
+    context.state.widget = { contact, ...copy, theme, mode, ...(avatar ? { avatar } : {}) };
   },
 };
+
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.avif']);
+
+/**
+ * The avatar shown next to the luzIA title. A URL (or, outside Next.js, a path
+ * as the portfolio serves it) is used as given. In a Next.js app a local image
+ * is served from `public/`: one already there is used in place, any other is
+ * copied there (after a confirm). Empty keeps luzIA's own icon.
+ */
+async function chooseAvatar(context: WizardContext, current: string | undefined): Promise<string | undefined> {
+  const nextjs = context.state.project.kind === 'nextjs';
+  context.say('The chat header can show an image next to the luzIA title: your photo, a logo, anything you like.');
+  for (;;) {
+    const answer = (
+      await context.prompter.text({
+        message: nextjs
+          ? 'Avatar image? A path to an image in this project or a URL (Enter for luzIA’s icon)'
+          : 'Avatar image? Its URL or path as your portfolio serves it, e.g. /images/me.jpg (Enter for luzIA’s icon)',
+        ...(current ? { initialValue: current } : {}),
+        defaultValue: current ?? '',
+      })
+    ).trim();
+    if (!answer) return undefined;
+    if (/^https?:\/\//i.test(answer) || !nextjs) return answer;
+    if (answer.startsWith('/') && !existsSync(path.resolve(context.cwd, answer))) return answer;
+
+    const relative = path.relative(context.cwd, path.resolve(context.cwd, answer)).split(path.sep).join('/');
+    const extension = path.extname(relative).toLowerCase();
+    if (!existsSync(path.join(context.cwd, relative))) {
+      context.warn(`${answer} was not found in this project. Enter a path to an image file, a URL, or leave it empty.`);
+      continue;
+    }
+    if (!IMAGE_EXTENSIONS.has(extension)) {
+      context.warn(`${answer} is not an image (use ${[...IMAGE_EXTENSIONS].join(', ')}).`);
+      continue;
+    }
+    if (relative.startsWith('public/')) return `/${relative.slice('public/'.length)}`;
+
+    const target = `public/luzia-avatar${extension}`;
+    const copied = await context.apply(
+      { files: [{ path: target, content: await readFile(path.join(context.cwd, relative)) }] },
+      `Copy ${relative} to ${target} so your site serves it?`,
+    );
+    if (copied) return `/${target.slice('public/'.length)}`;
+    context.changes.todo.push(`Put your avatar image in public/ and set the widget's avatar prop to its path`);
+    return undefined;
+  }
+}
 
 /** The widget's current greeting and questions, completed from the defaults where it has none. */
 function currentCopy(current: WidgetOptions, core: CoreDraft | undefined): WidgetCopy {
