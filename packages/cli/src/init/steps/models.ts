@@ -22,12 +22,20 @@ export const modelsStep: WizardStep = {
   title: 'Models and keys',
   async run(context) {
     const { prompter } = context;
+    // On a re-run, the current choices are the defaults.
+    const current = context.state.models;
 
     const chatProvider = await prompter.select<ChatProvider>({
       message: 'Which chat provider should the Agent use?',
       options: entries(CHAT_PROVIDERS).map(([value, provider]) => ({ value, label: provider.label })),
+      ...(current ? { initialValue: current.chat.provider } : {}),
     });
-    const chatModel = await chooseModel(context, `Which ${CHAT_PROVIDERS[chatProvider].label} chat model?`, CHAT_PROVIDERS[chatProvider].suggestedModels);
+    const chatModel = await chooseModel(
+      context,
+      `Which ${CHAT_PROVIDERS[chatProvider].label} chat model?`,
+      CHAT_PROVIDERS[chatProvider].suggestedModels,
+      current?.chat.provider === chatProvider ? current.chat.model : undefined,
+    );
 
     context.say(
       'The Knowledge Base is searched with an embeddings model, chosen separately from the chat model. ' +
@@ -37,12 +45,13 @@ export const modelsStep: WizardStep = {
     const embeddingProvider = await prompter.select<EmbeddingProvider>({
       message: 'Which embeddings provider?',
       options: embeddingProviders.map(([value, provider]) => ({ value, label: provider.label })),
-      initialValue: embeddingProviders.find(([value]) => value === (chatProvider as string))?.[0] ?? 'openai',
+      initialValue: current?.embedding.provider ?? embeddingProviders.find(([value]) => value === (chatProvider as string))?.[0] ?? 'openai',
     });
     const embeddingModel = await chooseModel(
       context,
       `Which ${EMBEDDING_PROVIDERS[embeddingProvider].label} embeddings model?`,
       EMBEDDING_PROVIDERS[embeddingProvider].suggestedModels,
+      current?.embedding.provider === embeddingProvider ? current.embedding.model : undefined,
     );
 
     const values: Record<string, string> = {
@@ -57,11 +66,16 @@ export const modelsStep: WizardStep = {
       [EMBEDDING_PROVIDERS[embeddingProvider].apiKeyEnv, EMBEDDING_PROVIDERS[embeddingProvider].label],
     ]);
     for (const [name, label] of keys) {
+      const saved = context.state.envValues[name];
       const key = (
-        await prompter.secret({ message: `Your ${label} API key (saved to ${ENV_FILE} as ${name})`, validate: required('the API key') })
+        await prompter.secret(
+          saved
+            ? { message: `Your ${label} API key (saved to ${ENV_FILE} as ${name}; press Enter to keep the current one)` }
+            : { message: `Your ${label} API key (saved to ${ENV_FILE} as ${name})`, validate: required('the API key') },
+        )
       ).trim();
       context.addSecret(key);
-      values[name] = key;
+      values[name] = key || saved!;
     }
 
     context.state.models = {
@@ -80,20 +94,25 @@ export const modelsStep: WizardStep = {
     context.say(`Variables for ${ENV_FILE}: ${Object.keys(values).join(', ')}.`);
     if (await context.apply({ files }, `Save these settings to ${ENV_FILE}?`)) {
       context.state.envValues = { ...context.state.envValues, ...values };
+    } else if (current) {
+      // Declined on a re-run: the models already set up stay in use.
+      context.state.models = current;
     } else {
       context.changes.todo.push(`Set ${Object.keys(values).join(', ')} in ${ENV_FILE}`);
     }
   },
 };
 
-async function chooseModel(context: WizardContext, message: string, suggested: readonly string[]): Promise<string> {
+/** A suggested model or any other id; `current` (the model already set up) is offered and preselected. */
+async function chooseModel(context: WizardContext, message: string, suggested: readonly string[], current?: string): Promise<string> {
+  const models = current && !suggested.includes(current) ? [current, ...suggested] : suggested;
   const choice = await context.prompter.select({
     message,
     options: [
-      ...suggested.map((model) => ({ value: model, label: model })),
+      ...models.map((model) => ({ value: model, label: model === current ? `${model} (current)` : model })),
       { value: OTHER_MODEL, label: 'Another model id…' },
     ],
-    initialValue: suggested[0],
+    initialValue: current ?? suggested[0],
   });
   if (choice !== OTHER_MODEL) return choice;
   return (await context.prompter.text({ message: 'Model id', validate: required('a model id') })).trim();

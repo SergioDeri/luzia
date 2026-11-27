@@ -1,3 +1,10 @@
+import { parseEnv } from 'node:util';
+
+/** The variables a dotenv file sets, by name (quotes removed, comments ignored). */
+export function readEnvFile(text: string): Record<string, string> {
+  return { ...parseEnv(text) } as Record<string, string>;
+}
+
 /**
  * Sets `values` in the text of a dotenv file, keeping every other line: an
  * existing assignment of a variable is replaced in place, and new variables are

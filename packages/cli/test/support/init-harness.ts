@@ -90,15 +90,16 @@ export const answer = {
 export function scriptedPrompter(script: ScriptedAnswer[]) {
   const queue = [...script];
   const failures: string[] = [];
-  const asked: { kind: Kind; message: string; options?: string[] }[] = [];
+  const asked: { kind: Kind; message: string; options?: string[]; initialValue?: string }[] = [];
 
   function next(
     kind: Kind,
     message: string,
     validate?: (value: string) => string | undefined,
     options?: string[],
+    initialValue?: string,
   ): unknown {
-    asked.push(options ? { kind, message, options } : { kind, message });
+    asked.push({ kind, message, ...(options ? { options } : {}), ...(initialValue !== undefined ? { initialValue } : {}) });
     const expected = queue.shift();
     const fail = (reason: string): never => {
       failures.push(reason);
@@ -132,6 +133,7 @@ export function scriptedPrompter(script: ScriptedAnswer[]) {
         options.message,
         undefined,
         options.options.map((option) => option.value),
+        options.initialValue,
       ) as string;
       const option = options.options.find((candidate) => candidate.value === value);
       if (!option) {
@@ -490,6 +492,114 @@ export function productionAnswers(options: ProductionAnswers = {}): ScriptedAnsw
     answer.confirm(/Upload .* to Vercel/, options.upload ?? true),
     ...(options.replace === undefined ? [] : [answer.confirm(/already exist/, options.replace)]),
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Re-run on a project where luzIA is already set up
+
+/** The keys already saved in the existing setup's `.env.local`. */
+export const EXISTING_KEYS = {
+  anthropic: 'sk-ant-existing-1111111111',
+  openai: 'sk-openai-existing-2222222222',
+};
+
+/** The Core of the existing setup (contact: `hello@jamie.dev`). */
+export const EXISTING_CORE = `# Jamie Rivera
+
+Full-stack developer building web products for ten years.
+
+## Role sought
+
+A staff engineering role.
+
+- Availability: From June
+- Work mode: Remote
+
+## Contact
+
+- Email: hello@jamie.dev (preferred)
+- https://github.com/jamie-example
+`;
+
+export const EXISTING_INSTRUCTIONS =
+  'If asked about salary or compensation, say Jamie Rivera prefers to discuss it on a call, and share the contact details.\n';
+
+const EXISTING_LAYOUT = `import type { ReactNode } from 'react';
+import { LuziaWidget } from '@luzia/react';
+
+export const metadata = { title: 'Jamie Rivera' };
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <LuziaWidget
+          endpoint="/api/luzia"
+          contact="hello@jamie.dev"
+          theme="dark"
+          mode="bubble"
+        />
+      </body>
+    </html>
+  );
+}
+`;
+
+const EXISTING_ROUTE = `import { createLuziaHandler, loadCompiledKnowledgeBase } from '@luzia/core';
+import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json';
+
+const handler = createLuziaHandler({
+  knowledgeBase: loadCompiledKnowledgeBase(compiledKnowledgeBase),
+});
+
+export const POST = handler;
+export const OPTIONS = handler;
+`;
+
+/** The files of a Next.js project where `luzia init` already ran (Anthropic chat, OpenAI embeddings). */
+export const EXISTING_SETUP: Record<string, string> = {
+  'knowledge-base/core.md': EXISTING_CORE,
+  'knowledge-base/instructions.md': EXISTING_INSTRUCTIONS,
+  'knowledge-base/projects.md': '# Projects\n\nShopwise checkout: rebuilt the checkout flow in React and Node.js.\n',
+  '.env.local': [
+    'DATABASE_URL=postgres://localhost/portfolio',
+    '',
+    '# luzIA: models and API keys (server-side only, never commit this file)',
+    'LUZIA_CHAT_PROVIDER=anthropic',
+    'LUZIA_CHAT_MODEL=claude-haiku-5-5',
+    'LUZIA_EMBEDDING_PROVIDER=openai',
+    'LUZIA_EMBEDDING_MODEL=text-embedding-3-small',
+    `ANTHROPIC_API_KEY=${EXISTING_KEYS.anthropic}`,
+    `OPENAI_API_KEY=${EXISTING_KEYS.openai}`,
+    '',
+  ].join('\n'),
+  '.gitignore': 'node_modules/\n.env*.local\n.luzia/\n',
+  'app/api/luzia/route.ts': EXISTING_ROUTE,
+  'app/layout.tsx': EXISTING_LAYOUT,
+  '.luzia/knowledge-base.json': '{"format":"stale","embeddingModel":"openai.embedding:text-embedding-3-small"}\n',
+};
+
+/** The Next.js fixture with an existing luzIA setup ({@link EXISTING_SETUP}), plus extra or replaced `files`. */
+export async function existingSetupProject(files: Record<string, string | Uint8Array> = {}): Promise<string> {
+  const cwd = await ownerProject('nextjs-app', { ...EXISTING_SETUP, ...files });
+  const packageJsonPath = path.join(cwd, 'package.json');
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+  packageJson.scripts = { ...packageJson.scripts, dev: 'luzia build && next dev', build: 'luzia build && next build' };
+  if (!('package.json' in files)) await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+  return cwd;
+}
+
+export type MenuChoice = 'models' | 'core' | 'instructions' | 'widget' | 'production' | 'done';
+
+/** A choice in the re-run menu. */
+export function menuAnswer(choice: MenuChoice): ScriptedAnswer {
+  return answer.select(/What do you want to change/, choice);
+}
+
+/** A re-run: each section's choice followed by its answers, then "done". */
+export function rerunAnswers(...sections: [MenuChoice, ScriptedAnswer[]][]): ScriptedAnswer[] {
+  return [...sections.flatMap(([choice, answers]) => [menuAnswer(choice), ...answers]), menuAnswer('done')];
 }
 
 /** Every answer of a full run on the Next.js fixture, with any step's answers replaced. */

@@ -3,6 +3,7 @@ import { questionsCoreSource } from './questions.ts';
 import type { CoreSource } from './source.ts';
 
 export type { CoreSource, ProposedCore } from './source.ts';
+export { parseCore } from './render.ts';
 
 /** Ways to produce the Core, in the order offered to the Owner. */
 export const coreSources: CoreSource[] = [cvCoreSource, questionsCoreSource];

@@ -4,7 +4,10 @@ import type { WizardStep } from '../src/init/step.ts';
 import { wizardSteps } from '../src/init/steps/index.ts';
 import { runInitWizard } from '../src/init/wizard.ts';
 import {
+  answer,
+  coreAnswers,
   fakeRunner,
+  reviewAnswer,
   scriptedPrompter,
   fullRunAnswers,
   integrationAnswers,
@@ -59,6 +62,39 @@ describe('luzia init: widget on Next.js', () => {
     expect(layout).toMatch(/suggestedQuestions=\{\[\s*"Can Jamie lead a team\?",\s*"What is Jamie’s experience\?",\s*"Does Jamie know \{GraphQL\}\?",\s*\]\}/);
     expect(layout).toContain('theme="auto"');
     expect(layout).toContain('mode="bubble"');
+  });
+
+  it('takes the name and contact from the Core as the Owner edited it in their editor', async () => {
+    const cwd = await ownerProject('nextjs-app');
+    const edited = '# Sam Rivera\n\nFull-stack developer.\n\n## Contact\n\n- https://github.com/jamie-example\n- https://sam.example.com/contact (preferred)\n';
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({
+        core: coreAnswers({ review: [reviewAnswer('edit'), answer.editor(/Edit your Core/, edited)] }),
+      }),
+    });
+
+    expect(run.code).toBe(0);
+    const layout = await readProjectFile(cwd, 'app/layout.tsx');
+    expect(layout).toContain('contact="https://sam.example.com/contact"');
+    expect(layout).not.toContain('jamie.rivera@example.com');
+    expect(layout).toContain('answers questions about Sam.');
+    expect(await readProjectFile(cwd, 'knowledge-base/instructions.md')).toContain('say Sam Rivera prefers to discuss it on a call');
+  });
+
+  it('asks for the widget contact when the edited Core no longer states one', async () => {
+    const cwd = await ownerProject('nextjs-app');
+    const edited = '# Jamie Rivera\n\nFull-stack developer.\n';
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({
+        core: coreAnswers({ review: [reviewAnswer('edit'), answer.editor(/Edit your Core/, edited)] }),
+        widget: [answer.text(/How should Visitors contact you/, 'https://jamie.dev'), ...widgetAnswers()],
+      }),
+    });
+
+    expect(run.code).toBe(0);
+    expect(await readProjectFile(cwd, 'app/layout.tsx')).toContain('contact="https://jamie.dev"');
   });
 
   it('prefixes the dev and build scripts with luzia build, and keeps the compiled Knowledge Base out of git', async () => {
