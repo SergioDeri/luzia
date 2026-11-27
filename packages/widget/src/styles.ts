@@ -9,7 +9,7 @@
  * - `--luzia-border`: input and inline-panel borders
  * - `--luzia-font`: font family
  * - `--luzia-inline-height`: height of the chat in inline mode
- * - `--luzia-avatar-size`: size of luzIA's picture at the top of the chat (default: 6rem to 10rem, by screen height)
+ * - `--luzia-avatar-size`: height of luzIA's picture at the top of the chat (default: 7rem to 13rem, by screen height)
  *
  * Every control is at least 44px square (a comfortable tap target) and shows
  * a focus ring for keyboard users. Below 480px wide the bubble's chat fills
@@ -113,38 +113,41 @@ export const styles = `
     background: var(--luzia-accent);
     color: var(--luzia-accent-contrast);
   }
-  /* Like a video call: luzIA's picture large and centred at the top, the conversation below it. */
+  /* Like a video call: luzIA's whole picture large and centred at the top, the conversation below it. */
   .stage {
     flex: none;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 1rem 1rem 0.75rem;
+    justify-content: center;
+    padding: 0.75rem 1rem 0;
     border-bottom: 1px solid var(--luzia-border);
   }
+  /* The picture is shown whole, in its own shape (a cut-out stands on the divider line). */
   .avatar {
     display: block;
-    width: var(--luzia-avatar-size, clamp(6rem, 26vh, 10rem));
-    aspect-ratio: 1;
-    border-radius: 50%;
-    overflow: hidden;
-    background: var(--luzia-muted);
-    box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 5px var(--luzia-border);
-    transition: box-shadow 0.2s ease;
+    height: var(--luzia-avatar-size, clamp(7rem, 30vh, 13rem));
   }
   .avatar img,
-  .avatar svg { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .stage-name { margin: 0; font-weight: 600; font-size: 0.95rem; }
-  .stage[data-speaking] .avatar {
-    box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 6px var(--luzia-accent);
+  .avatar svg {
+    display: block;
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    transition: filter 0.2s ease;
+  }
+  .avatar svg { aspect-ratio: 1; margin-bottom: 0.75rem; height: calc(100% - 0.75rem); }
+  /* While a reply streams in, a soft glow follows the picture's outline. */
+  .stage[data-speaking] .avatar img,
+  .stage[data-speaking] .avatar svg {
+    filter: drop-shadow(0 0 6px var(--luzia-accent));
     animation: luzia-speaking 1.4s ease-in-out infinite;
   }
   @keyframes luzia-speaking {
-    50% { box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 10px color-mix(in srgb, var(--luzia-accent) 35%, transparent); }
+    50% { filter: drop-shadow(0 0 14px var(--luzia-accent)); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .stage[data-speaking] .avatar { animation: none; }
+    .stage[data-speaking] .avatar img,
+    .stage[data-speaking] .avatar svg { animation: none; }
   }
   .title { margin: 0; font-size: 1rem; }
   .new-conversation {

@@ -66,7 +66,6 @@ const TEMPLATE = `
     </header>
     <div class="stage">
       <span class="avatar" aria-hidden="true"></span>
-      <p class="stage-name" aria-hidden="true">luzIA</p>
     </div>
     <div class="body">
       <p class="greeting" hidden></p>
