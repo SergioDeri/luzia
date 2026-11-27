@@ -7,7 +7,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "exports": {
       ".": {
@@ -19,5 +21,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.typecheck.json"
+  },
+  "devDependencies": {
+    "happy-dom": "^21.0.4"
   }
 }
