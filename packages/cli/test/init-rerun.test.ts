@@ -221,6 +221,85 @@ describe('luzia init: re-run on an existing setup', () => {
       expect(run.commands).toEqual([]);
     });
 
+    it('starts from the widget options in the layout, so keeping them changes nothing', async () => {
+      const cwd = await existingSetupProject({
+        'app/layout.tsx': `import type { ReactNode } from 'react';
+import { LuziaWidget } from '@luzia/react';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <LuziaWidget
+          endpoint="/api/luzia"
+          contact="hello@jamie.dev"
+          greeting="Hey there! Ask me anything about Jamie's work."
+          suggestedQuestions={[
+            "What does Jamie build?",
+            "Is Jamie open to relocation?",
+            "How do I reach Jamie?",
+          ]}
+          theme="dark"
+          mode="inline"
+        />
+      </body>
+    </html>
+  );
+}
+`,
+      });
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['widget', widgetAnswers({ theme: 'dark', mode: 'inline' })]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toContain("Greeting: Hey there! Ask me anything about Jamie's work.");
+      expect(run.stdout).toContain('- Is Jamie open to relocation?');
+      const initial = (question: RegExp) => run.asked.find((asked) => question.test(asked.message))?.initialValue;
+      expect(initial(/theme/i)).toBe('dark');
+      expect(initial(/bubble|inline/i)).toBe('inline');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
+
+    it('offers the current greeting and questions as the defaults when editing them', async () => {
+      const cwd = await existingSetupProject({
+        'app/layout.tsx': `import { LuziaWidget } from '@luzia/react';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <LuziaWidget endpoint="/api/luzia" contact="hello@jamie.dev" greeting="Hello from Jamie's agent" theme="light" />
+      </body>
+    </html>
+  );
+}
+`,
+      });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers([
+          'widget',
+          [
+            ...widgetAnswers({ edit: { questions: ['What is Jamie’s stack?'] }, theme: 'light' }),
+            answer.confirm(/Add the widget to/, true),
+          ],
+        ]),
+      });
+
+      expect(run.code).toBe(0);
+      const layout = await readProjectFile(cwd, 'app/layout.tsx');
+      expect(layout).toContain('greeting="Hello from Jamie\'s agent"');
+      expect(layout).toContain('"What is Jamie’s stack?"');
+      // Questions the layout didn't set start from the defaults.
+      expect(layout).toContain('"What is Jamie’s experience?"');
+      expect(layout).toContain('theme="light"');
+    });
+
     it('reads the name and contact from a Core the Owner wrote by hand', async () => {
       const cwd = await existingSetupProject({
         'knowledge-base/core.md': '# Jamie Rivera\n\nI build web products. Reach me at jamie@hand.example or on GitHub.\n',
