@@ -20,12 +20,20 @@ export const buildCommand: CliCommand = {
     const dir = path.resolve(io.cwd, values.dir);
     const out = path.resolve(io.cwd, values.out);
 
-    const knowledgeBase = await buildKnowledgeBase({ dir });
+    // Embeddings model and API key come from LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL.
+    const knowledgeBase = await buildKnowledgeBase({ dir, env: io.env ?? process.env });
     await writeCompiledKnowledgeBase(knowledgeBase, out);
 
     const parts = [`Core (${knowledgeBase.core.source})`];
     if (knowledgeBase.instructions) parts.push(`Instructions (${knowledgeBase.instructions.source})`);
     io.stdout(`Compiled Knowledge Base: ${parts.join(', ')}`);
+    const { chunks, embeddingModel } = knowledgeBase;
+    const sources = new Set(chunks.map((chunk) => chunk.source)).size;
+    io.stdout(
+      embeddingModel
+        ? `Embedded ${chunks.length} chunks from ${sources} file(s) with ${embeddingModel}`
+        : 'Retrievable content: 0 chunks (Core-only Knowledge Base, no embeddings needed)',
+    );
     io.stdout(`Wrote ${path.relative(io.cwd, out) || out}`);
     return 0;
   },

@@ -8,11 +8,11 @@ import { runCli } from '../src/index.ts';
 
 const coreFixtures = new URL('../../core/test/fixtures/', import.meta.url).pathname;
 
-function captureIo(cwd: string) {
+function captureIo(cwd: string, env: Record<string, string | undefined> = {}) {
   const out: string[] = [];
   const err: string[] = [];
   return {
-    io: { cwd, stdout: (line: string) => out.push(line), stderr: (line: string) => err.push(line) },
+    io: { cwd, env, stdout: (line: string) => out.push(line), stderr: (line: string) => err.push(line) },
     out,
     err,
   };
@@ -45,6 +45,39 @@ describe('luzia build', () => {
     const artifact = JSON.parse(await readFile(path.join(cwd, 'generated/kb.json'), 'utf8'));
     expect(artifact.core.text).toContain('Ada is a backend engineer.');
     expect(artifact.instructions).toBeNull();
+  });
+
+  it('reports that a Core-only Knowledge Base has nothing to embed', async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-cli-'));
+    const { io, out } = captureIo(cwd);
+
+    const code = await runCli(['build', '--dir', path.join(coreFixtures, 'core-only')], io);
+
+    expect(code).toBe(0);
+    expect(out.join('\n')).toMatch(/0 chunks/);
+  });
+
+  it('exits non-zero with a clear message when there is content to embed but no embeddings model', async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-cli-'));
+    const { io, err } = captureIo(cwd);
+
+    const code = await runCli(['build', '--dir', path.join(coreFixtures, 'with-documents')], io);
+
+    expect(code).toBe(1);
+    expect(err.join('\n')).toMatch(/no embeddings model is configured.*LUZIA_EMBEDDING_PROVIDER/s);
+  });
+
+  it('reads the embeddings model from the environment it is given', async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-cli-'));
+    const { io, err } = captureIo(cwd, {
+      LUZIA_EMBEDDING_PROVIDER: 'openai',
+      LUZIA_EMBEDDING_MODEL: 'text-embedding-3-small',
+    });
+
+    const code = await runCli(['build', '--dir', path.join(coreFixtures, 'with-documents')], io);
+
+    expect(code).toBe(1);
+    expect(err.join('\n')).toMatch(/Missing API key.*OPENAI_API_KEY/);
   });
 
   it('exits non-zero with a clear message when the Core file is missing', async () => {
