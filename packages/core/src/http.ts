@@ -16,7 +16,11 @@ export type LuziaErrorCode =
   | 'message_too_long'
   /** The request body is larger than `limits.maxRequestBytes` (413); it is not read further. */
   | 'request_too_large'
-  /** The chat model failed before replying (502). A failure mid-reply breaks the stream instead. */
+  /**
+   * The chat model failed before replying, or the embeddings model failed
+   * while searching the Knowledge Base (502). A failure mid-reply breaks the
+   * stream instead.
+   */
   | 'provider_error';
 
 /** Body of every non-streamed error response: `{ error: { code, message } }`. */

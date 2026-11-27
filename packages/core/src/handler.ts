@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { resolveChatModel, type ChatModelConfig, type Env } from './chat-model.ts';
 import type { EmbeddingModelConfig } from './embedding-model.ts';
 import { errorResponse } from './http.ts';
-import type { CompiledKnowledgeBase } from './knowledge-base/compiled.ts';
+import type { CompiledKnowledgeBase, KnowledgeBaseChunk } from './knowledge-base/compiled.ts';
 import { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
 import { assembleSystemPrompt } from './prompt/system-prompt.ts';
 import { replyResponse } from './reply-stream.ts';
@@ -84,7 +84,12 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
     if (overLimit) return overLimit;
 
     const messages: ModelMessage[] = body.data.messages;
-    const retrievedChunks = await retrieve(body.data.messages);
+    let retrievedChunks: KnowledgeBaseChunk[];
+    try {
+      retrievedChunks = await retrieve(body.data.messages);
+    } catch {
+      return errorResponse(502, 'provider_error', 'The embeddings model failed to search the Knowledge Base. Please try again later.');
+    }
 
     const result = streamText({
       model,

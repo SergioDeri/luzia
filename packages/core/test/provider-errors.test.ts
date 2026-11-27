@@ -1,6 +1,8 @@
-import { MockLanguageModelV4, simulateReadableStream } from 'ai/test';
+import { MockEmbeddingModelV4, MockLanguageModelV4, simulateReadableStream } from 'ai/test';
 import { describe, expect, it } from 'vitest';
 import { buildKnowledgeBase, createLuziaHandler } from '../src/index.ts';
+import { createFakeChatModel } from './support/fake-chat-model.ts';
+import { createFakeEmbeddingModel } from './support/fake-embedding-model.ts';
 import { chatRequest, fixturePath } from './support/http.ts';
 
 const knowledgeBase = await buildKnowledgeBase({ dir: fixturePath('knowledge-base') });
@@ -42,5 +44,34 @@ describe('chat model failures', () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).rejects.toThrow();
+  });
+});
+
+describe('embeddings model failures', () => {
+  it('answers with a provider error when the embeddings model fails while searching the Knowledge Base', async () => {
+    const built = await buildKnowledgeBase({
+      dir: fixturePath('with-documents'),
+      embedding: { model: createFakeEmbeddingModel().model },
+    });
+    const failingEmbedder = new MockEmbeddingModelV4({
+      provider: 'fake',
+      modelId: 'fake-embedding',
+      doEmbed: async () => {
+        throw new Error('Embeddings provider is down');
+      },
+    });
+    const chat = createFakeChatModel(['ok']);
+    const handler = createLuziaHandler({
+      knowledgeBase: built,
+      chat: { model: chat.model },
+      embedding: { model: failingEmbedder },
+      env: {},
+    });
+
+    const response = await handler(chatRequest(question));
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toMatchObject({ error: { code: 'provider_error' } });
+    expect(chat.prompts).toHaveLength(0);
   });
 });
