@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 — Tracer bullet: `luzia init` on Next.js with a Core from questions
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Vercel CLI availability and project linking are detected via the command runner
-- [ ] Nothing is uploaded before the Owner confirms; on confirm, `vercel env add` is requested per variable and environment
-- [ ] Without a linked project, a list of variable names and value sources is printed with no secret values
-- [ ] Seam tests cover linked + confirmed, linked + declined, and not linked
+- [x] Vercel CLI availability and project linking are detected via the command runner
+- [x] Nothing is uploaded before the Owner confirms; on confirm, `vercel env add` is requested per variable and environment
+- [x] Without a linked project, a list of variable names and value sources is printed with no secret values
+- [x] Seam tests cover linked + confirmed, linked + declined, and not linked

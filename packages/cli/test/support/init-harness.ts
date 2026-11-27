@@ -315,9 +315,25 @@ export function integrationAnswers(options: { apply?: boolean } = {}): ScriptedA
   return [answer.confirm(/Apply these changes/, options.apply ?? true)];
 }
 
-/** Production variables: no questions yet. */
-export function productionAnswers(): ScriptedAnswer[] {
-  return [];
+export interface ProductionAnswers {
+  /** Whether the project is linked to Vercel with the CLI installed; otherwise the step asks nothing. */
+  linked?: boolean;
+  /** Target environments: `production,preview` (default) or `production`. */
+  environments?: 'production,preview' | 'production';
+  /** The answer to the one upload confirmation. */
+  upload?: boolean;
+  /** The answer to replacing variables that already exist on Vercel, when asked. */
+  replace?: boolean;
+}
+
+/** Production variables: nothing to answer unless the project is linked to Vercel. */
+export function productionAnswers(options: ProductionAnswers = {}): ScriptedAnswer[] {
+  if (!options.linked) return [];
+  return [
+    answer.select(/environments/i, options.environments ?? 'production,preview'),
+    answer.confirm(/Upload .* to Vercel/, options.upload ?? true),
+    ...(options.replace === undefined ? [] : [answer.confirm(/already exist/, options.replace)]),
+  ];
 }
 
 /** Every answer of a full run on the Next.js fixture, with any step's answers replaced. */
