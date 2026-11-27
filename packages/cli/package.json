@@ -10,8 +10,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "bin": {
       "luzia": "./dist/bin.js"
     },

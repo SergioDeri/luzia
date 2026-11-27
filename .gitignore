@@ -21,3 +21,6 @@ next-env.d.ts
 
 # Local agent worktrees
 .claude/worktrees/
+
+# Local package tarballs (pnpm pack:local)
+.luzia-packs/

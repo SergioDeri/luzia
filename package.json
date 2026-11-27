@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck",
     "test": "vitest run",
-    "build": "pnpm -r --workspace-concurrency=1 --filter './packages/*' build"
+    "build": "pnpm -r --workspace-concurrency=1 --filter './packages/*' build",
+    "pack:local": "pnpm build && pnpm --filter \"./packages/*\" exec pnpm pack --pack-destination ../../.luzia-packs"
   },
   "devDependencies": {
     "@types/node": "^26.6.11",
