@@ -9,6 +9,8 @@ export type {
   KnowledgeBaseBuildReport,
   KnowledgeBaseBuildResult,
 } from './knowledge-base/build.ts';
+export { pdfReader } from './knowledge-base/sources.ts';
+export type { SourceReader, SourceReadResult, SourceSection } from './knowledge-base/sources.ts';
 export { writeCompiledKnowledgeBase } from './knowledge-base/write.ts';
 export { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
 export { COMPILED_KNOWLEDGE_BASE_FORMAT } from './knowledge-base/compiled.ts';

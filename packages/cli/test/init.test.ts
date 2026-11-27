@@ -182,7 +182,7 @@ describe('luzia init', () => {
   it('leaves later steps’ files untouched when the Owner cancels, and lists what was already written', async () => {
     const cwd = await ownerProject('nextjs-app');
     const core = coreAnswers();
-    core[core.length - 1] = answer.cancel('confirm', /Save the Core/);
+    core[core.length - 1] = answer.cancel('select', /Save the Core/);
 
     const run = await runInit(cwd, { answers: fullRunAnswers({ core, instructions: [], widget: [], integration: [] }) });
 

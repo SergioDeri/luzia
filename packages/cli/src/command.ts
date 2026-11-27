@@ -1,4 +1,4 @@
-import type { ChatModelInstance } from '@luzia/core';
+import type { ChatModelInstance, EmbeddingModelInstance } from '@luzia/core';
 import type { CommandRunner } from './init/command-runner.ts';
 import type { Prompter } from './init/prompter.ts';
 
@@ -22,6 +22,11 @@ export interface CliIo {
    * chooses in the wizard, with the key they enter.
    */
   chatModel?: ChatModelInstance;
+  /**
+   * The embeddings model `luzia build` (and `luzia init`'s build) embeds with.
+   * Defaults to LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL with the provider's key.
+   */
+  embeddingModel?: EmbeddingModelInstance;
 }
 
 export interface CliCommand {

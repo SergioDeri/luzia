@@ -1,8 +1,9 @@
 import { cp, mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { MockLanguageModelV4 } from 'ai/test';
+import { MockEmbeddingModelV4, MockLanguageModelV4 } from 'ai/test';
 import { runCli, type CliIo } from '../../src/index.ts';
+import type { CvFacts } from '../../src/init/core-sources/cv-draft.ts';
 import type { CommandRequest, CommandResult, CommandRunner } from '../../src/init/command-runner.ts';
 import { WizardCancelledError, type Prompter } from '../../src/init/prompter.ts';
 
@@ -17,7 +18,7 @@ const fixtures = new URL('../fixtures/', import.meta.url).pathname;
  */
 export async function ownerProject(
   fixture: string,
-  files: Record<string, string> = {},
+  files: Record<string, string | Uint8Array> = {},
   options: { remove?: string[] } = {},
 ): Promise<string> {
   const cwd = await mkdtemp(path.join(tmpdir(), 'luzia-init-'));
@@ -28,6 +29,11 @@ export async function ownerProject(
     await writeFile(path.join(cwd, file), content);
   }
   return cwd;
+}
+
+/** A fixture CV PDF (`cv.pdf` with a text layer, `scan.pdf` without), as bytes to put in a project. */
+export async function cvFixture(name: 'cv.pdf' | 'scan.pdf'): Promise<Buffer> {
+  return readFile(path.join(fixtures, 'cv', name));
 }
 
 export async function readProjectFile(cwd: string, file: string): Promise<string> {
@@ -185,6 +191,67 @@ export function unusedChatModel() {
   };
 }
 
+export type { CvFacts };
+
+const usage = {
+  inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
+  outputTokens: { total: 5, text: 5, reasoning: undefined },
+};
+
+/**
+ * A chat model that drafts Cores from CVs: each call answers with the next of
+ * `drafts` as structured output, or fails with it when it is an Error.
+ */
+export function cvDraftingModel(drafts: (CvFacts | Error)[]) {
+  const queue = [...drafts];
+  const model = new MockLanguageModelV4({
+    doGenerate: async () => {
+      const next = queue.shift();
+      if (!next) throw new Error('The drafting model was called more often than expected.');
+      if (next instanceof Error) throw next;
+      return {
+        content: [{ type: 'text', text: JSON.stringify(next) }],
+        finishReason: { unified: 'stop', raw: 'stop' },
+        usage,
+        warnings: [],
+      };
+    },
+  });
+  return {
+    model,
+    /** Everything the model received on each call (instructions and prompt), as plain text. */
+    get prompts() {
+      return model.doGenerateCalls.map((call) =>
+        call.prompt
+          .map((message) =>
+            typeof message.content === 'string'
+              ? message.content
+              : message.content.map((part) => ('text' in part && typeof part.text === 'string' ? part.text : '')).join(''),
+          )
+          .join('\n'),
+      );
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Embeddings model
+
+/** A deterministic, offline embeddings model that records what it embedded. */
+export function fakeEmbeddingModel() {
+  const model = new MockEmbeddingModelV4({
+    provider: 'fake',
+    modelId: 'fake-embedding',
+    doEmbed: async ({ values }) => ({ embeddings: values.map((value) => [value.length, 1]), warnings: [] }),
+  });
+  return {
+    model,
+    get embeddedValues() {
+      return model.doEmbedCalls.flatMap((call) => call.values);
+    },
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Running the wizard
 
@@ -192,6 +259,8 @@ export interface RunInitOptions {
   answers: ScriptedAnswer[];
   runner?: ReturnType<typeof fakeRunner>;
   chatModel?: CliIo['chatModel'];
+  /** The embeddings model `luzia build` uses; a deterministic offline fake by default. */
+  embeddingModel?: CliIo['embeddingModel'];
   env?: Record<string, string | undefined>;
 }
 
@@ -209,6 +278,7 @@ export async function runInit(cwd: string, options: RunInitOptions) {
     prompter: prompter.prompter,
     runner: runner.runner,
     chatModel: options.chatModel ?? unusedChatModel().model,
+    embeddingModel: options.embeddingModel ?? fakeEmbeddingModel().model,
   });
   const problems = prompter.problems();
   if (problems.length > 0) {
@@ -263,9 +333,15 @@ export function modelAnswers(options: ModelAnswers = {}): ScriptedAnswer[] {
   ];
 }
 
-/** Core from questions, then saving it. */
-export function coreAnswers(options: { save?: boolean } = {}): ScriptedAnswer[] {
+/** How the Owner reviews the shown Core: `accept` saves it, `edit` opens it in the editor, `redo` writes it again. */
+export function reviewAnswer(choice: 'accept' | 'edit' | 'redo'): ScriptedAnswer {
+  return answer.select(/Save the Core/, choice);
+}
+
+/** Core from questions, then accepting it. */
+export function coreAnswers(options: { review?: ScriptedAnswer[] } = {}): ScriptedAnswer[] {
   return [
+    answer.select(/write your Core/, 'questions'),
     answer.text(/your name/i, 'Jamie Rivera'),
     answer.text(/summary/i, 'Full-stack developer with six years of experience building web products.'),
     answer.text(/highlights/i, 'Led the checkout rebuild at Shopwise; maintains an open-source form library.'),
@@ -274,7 +350,23 @@ export function coreAnswers(options: { save?: boolean } = {}): ScriptedAnswer[] 
     answer.text(/role/i, 'A senior full-stack role'),
     answer.text(/available/i, 'From next month'),
     answer.select(/work mode/i, 'remote'),
-    answer.confirm(/Save the Core/, options.save ?? true),
+    ...(options.review ?? [reviewAnswer('accept')]),
+  ];
+}
+
+/**
+ * Core drafted from the CV at `path`: consent, then the answers to the
+ * essentials the draft is `missing`, then the review (accepted by default).
+ */
+export function cvAnswers(
+  options: { path?: string; consent?: boolean; missing?: ScriptedAnswer[]; review?: ScriptedAnswer[] } = {},
+): ScriptedAnswer[] {
+  return [
+    answer.select(/write your Core/, 'cv'),
+    answer.text(/CV/, options.path ?? 'cv.pdf'),
+    answer.confirm(/Send/, options.consent ?? true),
+    ...(options.missing ?? []),
+    ...(options.review ?? [reviewAnswer('accept')]),
   ];
 }
 

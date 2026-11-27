@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 — Tracer bullet: `luzia init` on Next.js with a Core from questions
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Consent prompt names the provider before any CV text is sent; declining switches to the questions path
-- [ ] The drafting prompt enforces stated-facts-only and no inference (verified on what the fake model receives)
-- [ ] Missing essentials flagged by the draft are asked for and merged into the Core
-- [ ] The draft is shown in full and written only after accept or edit; redo produces a new draft
-- [ ] The CV PDF is copied into the Knowledge Base and included by the build
-- [ ] A PDF with little or no extractable text shows a clear message and offers the questions path
-- [ ] A drafting failure names the provider and variable, lets the Owner re-enter the key and retry, or switch to questions
-- [ ] Seam tests cover consent declined, happy path, missing essentials, edit/redo, scanned PDF and drafting failure
+- [x] Consent prompt names the provider before any CV text is sent; declining switches to the questions path
+- [x] The drafting prompt enforces stated-facts-only and no inference (verified on what the fake model receives)
+- [x] Missing essentials flagged by the draft are asked for and merged into the Core
+- [x] The draft is shown in full and written only after accept or edit; redo produces a new draft
+- [x] The CV PDF is copied into the Knowledge Base and included by the build
+- [x] A PDF with little or no extractable text shows a clear message and offers the questions path
+- [x] A drafting failure names the provider and variable, lets the Owner re-enter the key and retry, or switch to questions
+- [x] Seam tests cover consent declined, happy path, missing essentials, edit/redo, scanned PDF and drafting failure
