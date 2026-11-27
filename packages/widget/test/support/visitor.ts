@@ -55,6 +55,13 @@ export function visitor(host: Element) {
         role: el.dataset.role,
         text: el.textContent ?? '',
       })),
-    alert: () => root().querySelector('[role="alert"]')?.textContent?.trim() ?? null,
+    alert: () => {
+      const alert = root().querySelector<HTMLElement>('[role="alert"]');
+      return alert && !alert.hidden ? (alert.textContent?.trim() ?? '') : null;
+    },
+    /** Where the link inside the alert (e.g. the Owner's contact) points, if there is one. */
+    alertLink: () => root().querySelector<HTMLAnchorElement>('[role="alert"] a')?.getAttribute('href') ?? null,
+    /** Whether the Visitor can currently type and send a message. */
+    canSend: () => !messageBox().disabled && !button('Send').disabled,
   };
 }

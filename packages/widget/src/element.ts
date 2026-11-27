@@ -1,3 +1,4 @@
+import { failureKind, renderAlert } from './alert.ts';
 import { Conversation, type ConversationState } from './conversation.ts';
 import { styles } from './styles.ts';
 
@@ -11,6 +12,11 @@ export const LUZIA_WIDGET_TAG = 'luzia-widget';
 export interface LuziaWidgetConfig {
   /** URL of the luzIA server handler, e.g. `/api/luzia`. */
   endpoint: string;
+  /**
+   * How Visitors can reach the Owner (an email address, a URL or any short
+   * text), shown when luzIA is unavailable or the conversation limit is hit.
+   */
+  contact?: string;
 }
 
 // Lets this module be imported during server-side rendering, where there is no DOM.
@@ -54,11 +60,19 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     this.setAttribute('endpoint', value);
   }
 
+  get contact(): string {
+    return this.getAttribute('contact') ?? '';
+  }
+
+  set contact(value: string) {
+    this.setAttribute('contact', value);
+  }
+
   connectedCallback(): void {
     if (this.#view) return;
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${styles}</style>${TEMPLATE}`;
-    this.#view = new View(root, this.conversation);
+    this.#view = new View(root, this.conversation, () => this.contact);
   }
 }
 
@@ -72,9 +86,12 @@ class View {
   readonly #input: HTMLTextAreaElement;
   readonly #send: HTMLButtonElement;
   readonly #conversation: Conversation;
+  readonly #contact: () => string;
+  #lastSent = '';
 
-  constructor(root: ShadowRoot, conversation: Conversation) {
+  constructor(root: ShadowRoot, conversation: Conversation, contact: () => string) {
     this.#conversation = conversation;
+    this.#contact = contact;
     this.#bubble = root.querySelector('.bubble')!;
     this.#panel = root.querySelector('.panel')!;
     this.#messages = root.querySelector('.messages')!;
@@ -106,7 +123,11 @@ class View {
   }
 
   #submit(): void {
-    if (this.#conversation.send(this.#input.value)) this.#input.value = '';
+    const text = this.#input.value;
+    if (this.#conversation.send(text)) {
+      this.#lastSent = text;
+      this.#input.value = '';
+    }
   }
 
   #render(state: ConversationState): void {
@@ -127,10 +148,14 @@ class View {
     this.#messages.scrollTop = this.#messages.scrollHeight;
 
     const streaming = state.status === 'streaming';
-    this.#send.disabled = streaming;
     this.#messages.setAttribute('aria-busy', String(streaming));
 
-    this.#alert.hidden = state.status !== 'error';
-    this.#alert.textContent = state.status === 'error' ? 'luzIA is unavailable right now. Please try again later.' : '';
+    // Error, limit and too-long states (see ./alert.ts).
+    const failure = state.status === 'error' && state.error ? failureKind(state.error) : null;
+    renderAlert(this.#alert, failure, this.#contact());
+    const conversationOver = failure === 'limit';
+    this.#input.disabled = conversationOver;
+    this.#send.disabled = streaming || conversationOver;
+    if (failure === 'too-long' && !this.#input.value) this.#input.value = this.#lastSent;
   }
 }

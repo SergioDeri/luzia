@@ -14,6 +14,8 @@ export interface FakeReply {
   push(text: string): Promise<void>;
   /** Ends the streamed reply. */
   end(): Promise<void>;
+  /** Breaks the streamed reply, as a provider failing mid-reply does. */
+  fail(): Promise<void>;
 }
 
 export interface FakeFetch {
@@ -22,6 +24,8 @@ export interface FakeFetch {
   nextReply(): Promise<FakeReply>;
   /** Makes the next request fail as a network error would. */
   failNextWithNetworkError(): void;
+  /** Makes the server answer the next request with a `{ error: { code, message } }` body. */
+  failNextWith(status: number, code: string, message?: string): void;
 }
 
 /**
@@ -33,6 +37,7 @@ export function installFakeFetch(): FakeFetch {
   const pendingReplies: Array<(reply: FakeReply) => void> = [];
   const readyReplies: FakeReply[] = [];
   let failNext = false;
+  let errorNext: { status: number; code: string; message: string } | null = null;
 
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
     requests.push({
@@ -45,6 +50,11 @@ export function installFakeFetch(): FakeFetch {
     if (failNext) {
       failNext = false;
       throw new TypeError('Failed to fetch');
+    }
+    if (errorNext) {
+      const { status, code, message } = errorNext;
+      errorNext = null;
+      return Response.json({ error: { code, message } }, { status });
     }
 
     const encoder = new TextEncoder();
@@ -61,6 +71,10 @@ export function installFakeFetch(): FakeFetch {
       },
       end: async () => {
         controller.close();
+        await settle();
+      },
+      fail: async () => {
+        controller.error(new TypeError('network error'));
         await settle();
       },
     };
@@ -80,6 +94,9 @@ export function installFakeFetch(): FakeFetch {
     },
     failNextWithNetworkError: () => {
       failNext = true;
+    },
+    failNextWith: (status, code, message = 'Server error.') => {
+      errorNext = { status, code, message };
     },
   };
 }

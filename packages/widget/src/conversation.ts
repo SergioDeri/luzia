@@ -1,3 +1,4 @@
+import { MESSAGE_TOO_LONG_CODE } from './alert.ts';
 import { LuziaRequestError, streamReply, type ChatMessage } from './chat-client.ts';
 
 /** `streaming` while a reply is arriving; `error` after the last request failed. */
@@ -78,7 +79,9 @@ export class Conversation {
     } catch (cause) {
       const error =
         cause instanceof LuziaRequestError ? cause : new LuziaRequestError('network_error', String(cause));
-      this.#set({ messages: withReply(history, reply), status: 'error', error });
+      // A message the server refused for its length is dropped so the next send doesn't repeat it.
+      const kept = error.code === MESSAGE_TOO_LONG_CODE ? history.slice(0, -1) : withReply(history, reply);
+      this.#set({ messages: kept, status: 'error', error });
     } finally {
       if (this.#abort === abort) this.#abort = null;
     }

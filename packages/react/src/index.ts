@@ -14,6 +14,6 @@ if (typeof customElements !== 'undefined') defineLuziaWidget();
 export type LuziaWidgetProps = LuziaWidgetConfig;
 
 /** The luzIA chat widget: a floating bubble that opens a chat with the Agent. */
-export function LuziaWidget({ endpoint }: LuziaWidgetProps): ReactElement {
-  return createElement(LUZIA_WIDGET_TAG, { endpoint });
+export function LuziaWidget({ endpoint, contact }: LuziaWidgetProps): ReactElement {
+  return createElement(LUZIA_WIDGET_TAG, { endpoint, contact });
 }

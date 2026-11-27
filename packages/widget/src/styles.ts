@@ -89,6 +89,9 @@ export const styles = `
     font-size: 0.875rem;
     color: #b91c1c;
   }
+  .alert a {
+    color: inherit;
+  }
   .composer {
     display: flex;
     gap: 0.5rem;
