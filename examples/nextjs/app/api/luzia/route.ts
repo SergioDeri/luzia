@@ -15,3 +15,5 @@ const handler = createLuziaHandler({
 export const POST = handler;
 // Answers CORS preflight for allowed origins.
 export const OPTIONS = handler;
+// Tells the widget who luzIA talks about (the name in your Core), for its greeting.
+export const GET = handler;

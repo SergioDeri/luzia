@@ -74,6 +74,7 @@ describe('luzia init', () => {
     expect(route).toContain("import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json'");
     expect(route).toMatch(/export const POST = handler/);
     expect(route).toMatch(/export const OPTIONS = handler/);
+    expect(route).toMatch(/export const GET = handler/);
 
     // `luzia build` ran and its report was shown.
     const artifact = JSON.parse(await readProjectFile(cwd, '.luzia/knowledge-base.json'));

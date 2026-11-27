@@ -21,7 +21,12 @@ export interface FakeReply {
 }
 
 export interface FakeFetch {
+  /** Chat requests (POST), in order. */
   requests: RecordedRequest[];
+  /** URLs the widget asked who luzIA talks about (GET). */
+  ownerRequests: string[];
+  /** Makes the server answer GET with this Owner name (until then it answers 404, like an older server). */
+  answerOwner(name: string | null): void;
   /** Resolves with the reply stream for the next request the widget makes. */
   nextReply(): Promise<FakeReply>;
   /** Makes the next request fail as a network error would. */
@@ -40,8 +45,17 @@ export function installFakeFetch(): FakeFetch {
   const readyReplies: FakeReply[] = [];
   let failNext = false;
   let errorNext: { status: number; code: string; message: string } | null = null;
+  // GET asks who luzIA talks about (for the greeting); answered apart from chat replies.
+  let owner: { name: string | null } | null = null;
+  const ownerRequests: string[] = [];
 
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    if ((init?.method ?? 'GET') === 'GET') {
+      ownerRequests.push(String(input));
+      return owner
+        ? Response.json({ owner })
+        : Response.json({ error: { code: 'not_found', message: 'Not found.' } }, { status: 404 });
+    }
     requests.push({
       url: String(input),
       method: init?.method ?? 'GET',
@@ -96,6 +110,10 @@ export function installFakeFetch(): FakeFetch {
 
   return {
     requests,
+    ownerRequests,
+    answerOwner: (name) => {
+      owner = { name };
+    },
     nextReply: async () => {
       const ready = readyReplies.shift();
       if (ready) return ready;

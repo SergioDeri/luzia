@@ -69,9 +69,15 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
     ...(config.retrieval ? { retrieval: config.retrieval } : {}),
   });
 
+  // Who luzIA talks about, for the widget's greeting: the Owner's name from the Core's title.
+  const owner = { name: ownerName(knowledgeBase.core.text) };
+
   return protection.wrap(async function luziaHandler(request) {
+    if (request.method === 'GET') {
+      return Response.json({ owner }, { headers: { 'cache-control': 'public, max-age=300' } });
+    }
     if (request.method !== 'POST') {
-      return errorResponse(405, 'method_not_allowed', 'Use POST to chat with luzIA.', { allow: 'POST' });
+      return errorResponse(405, 'method_not_allowed', 'Use POST to chat with luzIA.', { allow: 'GET, POST' });
     }
 
     const text = await protection.readBody(request);
@@ -110,4 +116,10 @@ function parseJson(text: string): unknown {
   } catch {
     return undefined;
   }
+}
+
+/** The Owner's name: the Core's first top-level heading (`# Name`), `null` when it has none. */
+function ownerName(core: string): string | null {
+  const heading = /^#[ \t]+(.+?)[ \t#]*$/m.exec(core);
+  return heading ? heading[1]!.trim() : null;
 }

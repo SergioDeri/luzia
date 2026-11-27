@@ -426,7 +426,7 @@ Origin checks stop other websites from using your server through Visitors' brows
 | --- | --- | --- | --- |
 | `endpoint` | `endpoint` | (required) | URL of the luzIA handler, e.g. `/api/luzia` or `https://luzia-server.vercel.app/api/luzia` |
 | `contact` | `contact` | (none) | How to reach the Owner (email, URL or short text), shown when a limit is hit or the Agent is unavailable |
-| `greeting` | `greeting` | luzIA introduces itself, in the page's language (Spanish or English) | What luzIA says first, in its speech bubble, when a conversation starts (the chat opens, or "New conversation"); then it stays at the top of the conversation. Display only, never sent to the server. `greeting=""` turns it off |
+| `greeting` | `greeting` | luzIA introduces itself by your name (the title of your Core, which the server shares with `GET` on the endpoint), in the page's language (`<html lang>`: Spanish or English) | What luzIA says first, in its speech bubble, when a conversation starts (the chat opens, or "New conversation"); then it stays at the top of the conversation. Display only, never sent to the server. `greeting=""` turns it off |
 | `suggested-questions` | `suggestedQuestions` | (none) | Questions the Visitor can click to send, shown until the conversation starts. Attribute: a JSON array of strings; prop: an array |
 | `mode` | `mode` | `bubble` | `bubble` (floating button that opens the chat) or `inline` (the chat rendered in place, always open, for a section such as "Ask luzIA about me") |
 | `theme` | `theme` | `light` | `light`, `dark`, or `auto` to follow the Visitor's `prefers-color-scheme` |

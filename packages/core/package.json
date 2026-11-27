@@ -1,6 +1,6 @@
 {
   "name": "luzia-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "luzIA server handler and Knowledge Base compiler",
   "license": "MIT",
   "author": "Sergio Deri <sergio.deri@astrocode.uy>",

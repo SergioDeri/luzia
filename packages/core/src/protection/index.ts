@@ -57,7 +57,7 @@ export function createProtection(config: ProtectionConfig, env: Env) {
         if (request.method === 'OPTIONS') {
           return verdict.kind === 'allowed'
             ? preflightResponse(request, verdict.origin)
-            : new Response(null, { status: 204, headers: { allow: 'POST, OPTIONS' } });
+            : new Response(null, { status: 204, headers: { allow: 'GET, POST, OPTIONS' } });
         }
         const response = await handler(request);
         return verdict.kind === 'allowed' ? withCorsHeaders(response, verdict.origin) : response;

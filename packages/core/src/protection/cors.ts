@@ -19,8 +19,8 @@ export function preflightResponse(request: Request, origin: string): Response {
     new Response(null, {
       status: 204,
       headers: {
-        allow: 'POST, OPTIONS',
-        'access-control-allow-methods': 'POST, OPTIONS',
+        allow: 'GET, POST, OPTIONS',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
         'access-control-allow-headers': requested ?? 'content-type',
         'access-control-max-age': String(PREFLIGHT_MAX_AGE),
       },

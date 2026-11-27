@@ -84,10 +84,10 @@ describe('chat over HTTP', () => {
     expect(await response.text()).toBe('ok');
   });
 
-  it('rejects requests that are not POST', async () => {
+  it('rejects methods other than POST (chat) and GET (who luzIA talks about)', async () => {
     const { handler, chat } = await setup();
 
-    const response = await handler(new Request('https://portfolio.example/api/luzia'));
+    const response = await handler(new Request('https://portfolio.example/api/luzia', { method: 'PUT' }));
 
     expect(response.status).toBe(405);
     expect(await response.json()).toMatchObject({ error: { code: 'method_not_allowed' } });

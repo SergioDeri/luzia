@@ -33,6 +33,7 @@ describe('luzia init: Astro', () => {
     expect(endpoint).toContain("'../../../.luzia/knowledge-base.json'");
     expect(endpoint).toMatch(/export const POST: APIRoute/);
     expect(endpoint).toMatch(/export const OPTIONS: APIRoute/);
+    expect(endpoint).toMatch(/export const GET: APIRoute/);
 
     // The widget goes at the end of the layout's body, with the script that registers it.
     const layout = await readProjectFile(cwd, 'src/layouts/Layout.astro');

@@ -156,6 +156,8 @@ function endpointFile(project: ProjectInfo): FileWrite {
     typescript ? 'export const POST: APIRoute = ({ request }) => handler(request);' : 'export const POST = ({ request }) => handler(request);',
     '// Answers CORS preflight for allowed origins.',
     typescript ? 'export const OPTIONS: APIRoute = ({ request }) => handler(request);' : 'export const OPTIONS = ({ request }) => handler(request);',
+    '// Tells the widget who luzIA talks about (the name in your Core), for its greeting.',
+    typescript ? 'export const GET: APIRoute = ({ request }) => handler(request);' : 'export const GET = ({ request }) => handler(request);',
     '',
   ];
   return { path: file, content: lines.join('\n') };

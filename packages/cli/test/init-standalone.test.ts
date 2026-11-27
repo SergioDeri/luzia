@@ -73,6 +73,7 @@ describe('luzia init: standalone server', () => {
     expect(fn).toContain("allowedOrigins: ['https://jamie.example.com', 'https://www.jamie.example.com']");
     expect(fn).toMatch(/export const POST = handler/);
     expect(fn).toMatch(/export const OPTIONS = handler/);
+    expect(fn).toMatch(/export const GET = handler/);
 
     // vercel.json ships the compiled Knowledge Base with the function.
     const vercel = JSON.parse(await readProjectFile(cwd, 'vercel.json'));

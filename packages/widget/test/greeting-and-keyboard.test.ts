@@ -46,6 +46,33 @@ describe('greeting said by luzIA', () => {
     expect(widget.speechBubble()).toMatch(/I’m luzIA, an AI agent that answers questions about/);
   });
 
+  it('greets with the Owner’s name when the server shares it', async () => {
+    server.answerOwner('Sergio Deri');
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+
+    expect(widget.speechBubble()).toMatch(/I’m luzIA, an AI agent that answers questions about Sergio Deri:/);
+    expect(server.ownerRequests).toEqual(['/api/luzia']);
+  });
+
+  it('greets with the Owner’s name in Spanish on a Spanish page', async () => {
+    document.documentElement.lang = 'es';
+    server.answerOwner('Sergio Deri');
+    const widget = mountWidget();
+    await widget.click('luzIA chat');
+
+    expect(widget.speechBubble()).toMatch(/Soy luzIA, una IA que responde preguntas sobre Sergio Deri:/);
+  });
+
+  it('does not ask the server when the Owner wrote their own greeting', async () => {
+    server.answerOwner('Sergio Deri');
+    const widget = mountWidget({ greeting: 'Hello!' });
+    await widget.click('luzIA chat');
+
+    expect(widget.speechBubble()).toBe('Hello!');
+    expect(server.ownerRequests).toEqual([]);
+  });
+
   it('greets in Spanish on a Spanish page', async () => {
     document.documentElement.lang = 'es';
     const widget = mountWidget();

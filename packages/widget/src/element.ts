@@ -51,12 +51,32 @@ export type LuziaWidgetTheme = 'light' | 'dark' | 'auto';
 const BaseElement: typeof HTMLElement =
   typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
 
-/** luzIA's own introduction, in the page's language (Spanish or English), for Owners who set no greeting. */
-function defaultGreeting(): string {
+/**
+ * luzIA's own introduction, in the page's language (Spanish or English), for
+ * Owners who set no greeting: by the Owner's name when the server shares it.
+ */
+function defaultGreeting(name: string | null = null): string {
   const language = (document.documentElement.lang || navigator.language || 'en').toLowerCase();
   return language.startsWith('es')
-    ? '¡Hola! Soy luzIA, una IA que responde preguntas sobre la persona de este portfolio: su experiencia, sus proyectos y lo que busca. ¿Qué te gustaría saber?'
-    : 'Hi! I’m luzIA, an AI agent that answers questions about the person behind this portfolio: their experience, their projects and what they’re looking for. What would you like to know?';
+    ? `¡Hola! Soy luzIA, una IA que responde preguntas sobre ${name ?? 'la persona de este portfolio'}: su experiencia, sus proyectos y lo que busca. ¿Qué te gustaría saber?`
+    : `Hi! I’m luzIA, an AI agent that answers questions about ${name ?? 'the person behind this portfolio'}: their experience, their projects and what they’re looking for. What would you like to know?`;
+}
+
+/** How long the greeting waits for the Owner's name before luzIA introduces itself without it. */
+const OWNER_WAIT_MS = 1_500;
+
+/**
+ * Asks the luzIA server who it talks about (GET on the endpoint; the server
+ * lets browsers cache the answer). `null` when it can't say, e.g. an older server.
+ */
+function lookUpOwner(endpoint: string): Promise<string | null> {
+  return fetch(endpoint, { headers: { accept: 'application/json' } })
+    .then(async (response) => {
+      if (!response.ok) return null;
+      const body = (await response.json()) as { owner?: { name?: unknown } };
+      return typeof body.owner?.name === 'string' && body.owner.name.trim() ? body.owner.name.trim() : null;
+    })
+    .catch(() => null);
 }
 
 /** How long the speech bubble stays after the mouse leaves it. */
@@ -179,8 +199,17 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${styles}</style>${TEMPLATE}`;
     persistConversation(this.conversation, storageKey(this.endpoint));
-    this.#view = new View(root, this.conversation, () => this.contact);
+    // Without a greeting of the Owner's own, luzIA introduces itself by the Owner's name, which the server knows.
+    let lookup: Promise<string | null> | null = null;
+    const owner = () => {
+      if (this.hasAttribute('greeting') || !this.endpoint) return null;
+      lookup ??= lookUpOwner(this.endpoint);
+      return lookup;
+    };
+    this.#view = new View(root, this.conversation, () => this.contact, owner);
     this.#view.configure(this);
+    // Asked as the page loads, so the name is ready when the chat opens.
+    void owner();
   }
 
   attributeChangedCallback(): void {
@@ -243,7 +272,16 @@ class View {
   #mode: LuziaWidgetMode = 'bubble';
   #wasStreaming = false;
 
-  constructor(root: ShadowRoot, conversation: Conversation, contact: () => string) {
+  readonly #owner: () => Promise<string | null> | null;
+  #ownerName: string | null = null;
+
+  constructor(
+    root: ShadowRoot,
+    conversation: Conversation,
+    contact: () => string,
+    owner: () => Promise<string | null> | null = () => null,
+  ) {
+    this.#owner = owner;
     this.#conversation = conversation;
     this.#host = root.host as HTMLElement;
     this.#contact = contact;
@@ -308,7 +346,7 @@ class View {
   configure(options: ViewOptions): void {
     this.#showAvatar(options.avatar.trim());
 
-    this.#greetingText = options.greeting.trim();
+    this.#greetingText = this.#ownerName && this.#owner() ? defaultGreeting(this.#ownerName) : options.greeting.trim();
     this.#greeting.textContent = this.#greetingText;
 
     this.#suggestions.replaceChildren(
@@ -396,11 +434,25 @@ class View {
   #greet(): void {
     if (this.#greeted || this.#panel.hidden) return;
     this.#greeted = true;
-    if (!this.#greetingText || this.#conversation.state.messages.length > 0) return;
-    this.#stopSpeaking();
-    this.#speaking = 'greeting';
-    this.#showSpeech(this.#greetingText);
-    this.#render(this.#conversation.state);
+    const say = () => {
+      if (!this.#greetingText || this.#panel.hidden || this.#conversation.state.messages.length > 0) return;
+      this.#stopSpeaking();
+      this.#speaking = 'greeting';
+      this.#showSpeech(this.#greetingText);
+      this.#render(this.#conversation.state);
+    };
+    const lookup = this.#owner();
+    if (!lookup) return say();
+    // Wait briefly for the Owner's name; without it, luzIA still introduces itself.
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), OWNER_WAIT_MS));
+    void Promise.race([lookup, timeout]).then((name) => {
+      if (name) {
+        this.#ownerName = name;
+        this.#greetingText = defaultGreeting(name);
+        this.#greeting.textContent = this.#greetingText;
+      }
+      say();
+    });
   }
 
   /** The Owner's image at the top of the chat, or luzIA's icon. Decorative: the title already says "luzIA". */

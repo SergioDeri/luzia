@@ -10,6 +10,7 @@ const handler = createLuziaHandler({ knowledgeBase: loadCompiledKnowledgeBase(co
 
 export const POST = handler; // Web Request in, streamed Response out
 export const OPTIONS = handler; // CORS preflight
+export const GET = handler; // the Owner's name, for the widget's greeting
 ```
 
 The handler is framework-agnostic: mount it as a Next.js route handler or deploy it as a standalone Vercel Function. Chat and embeddings models, allowed origins and limits come from handler options or `LUZIA_*` environment variables. The compiled Knowledge Base is produced by `luzia build` from [`luzia-cli`](../cli), or by `buildKnowledgeBase` from this package.
