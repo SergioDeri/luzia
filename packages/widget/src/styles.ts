@@ -112,6 +112,15 @@ export const styles = `
     background: var(--luzia-accent);
     color: var(--luzia-accent-contrast);
   }
+  .avatar {
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-inline-end: 0.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
   .title { margin: 0; font-size: 1rem; }
   .new-conversation {
     margin-inline: auto 0.5rem;

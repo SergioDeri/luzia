@@ -28,6 +28,7 @@ export function LuziaWidget({
   suggestedQuestions,
   mode,
   theme,
+  avatar,
   className,
   style,
 }: LuziaWidgetProps): ReactElement {
@@ -37,6 +38,7 @@ export function LuziaWidget({
     greeting,
     mode,
     theme,
+    avatar,
     // Passed as the attribute so it renders the same on the server and the client.
     'suggested-questions': suggestedQuestions ? JSON.stringify(suggestedQuestions) : undefined,
     className,

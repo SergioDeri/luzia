@@ -37,6 +37,11 @@ export interface LuziaWidgetConfig {
    * `prefers-color-scheme`. Colours are CSS custom properties (see styles.ts).
    */
   theme?: LuziaWidgetTheme;
+  /**
+   * URL of an image shown next to the "luzIA" title in the chat header (the
+   * Owner's photo, a logo…). Without one, luzIA's own icon is shown.
+   */
+  avatar?: string;
 }
 
 export type LuziaWidgetMode = 'bubble' | 'inline';
@@ -46,9 +51,16 @@ export type LuziaWidgetTheme = 'light' | 'dark' | 'auto';
 const BaseElement: typeof HTMLElement =
   typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
 
+/** luzIA's own icon, in the accent colours so it follows the Owner's theme. */
+const LUZIA_ICON = `<svg viewBox="0 0 32 32" width="100%" height="100%" focusable="false">
+  <circle cx="16" cy="16" r="16" fill="var(--luzia-accent-contrast)" />
+  <path d="M16 6l2.6 6.4L25 15l-6.4 2.6L16 24l-2.6-6.4L7 15l6.4-2.6z" fill="var(--luzia-accent)" />
+</svg>`;
+
 const TEMPLATE = `
   <section class="panel" role="dialog" aria-label="luzIA" hidden>
     <header class="header">
+      <span class="avatar" aria-hidden="true"></span>
       <h2 class="title">luzIA</h2>
       <button type="button" class="new-conversation">New conversation</button>
       <button type="button" class="close" aria-label="Close luzIA chat">&times;</button>
@@ -75,7 +87,7 @@ const TEMPLATE = `
  * panel where the Visitor talks to the Agent, or with `mode="inline"` the chat
  * itself, embedded where the element sits. Attributes (see
  * {@link LuziaWidgetConfig}): `endpoint`, `contact`, `greeting`,
- * `suggested-questions` (JSON array of strings), `mode` and `theme`. Each is
+ * `suggested-questions` (JSON array of strings), `mode`, `theme` and `avatar`. Each is
  * also a property (`suggestedQuestions` takes an array).
  *
  * State lives in a {@link Conversation}; this element only renders its
@@ -135,8 +147,16 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     this.setAttribute('theme', value);
   }
 
+  get avatar(): string {
+    return this.getAttribute('avatar') ?? '';
+  }
+
+  set avatar(value: string) {
+    this.setAttribute('avatar', value);
+  }
+
   static get observedAttributes(): string[] {
-    return ['greeting', 'suggested-questions', 'mode'];
+    return ['greeting', 'suggested-questions', 'mode', 'avatar'];
   }
 
   connectedCallback(): void {
@@ -176,6 +196,7 @@ class View {
   readonly #close: HTMLButtonElement;
   readonly #body: HTMLElement;
   readonly #greeting: HTMLElement;
+  readonly #avatar: HTMLElement;
   readonly #messages: HTMLOListElement;
   readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
@@ -196,6 +217,7 @@ class View {
     this.#close = root.querySelector('.close')!;
     this.#body = root.querySelector('.body')!;
     this.#greeting = root.querySelector('.greeting')!;
+    this.#avatar = root.querySelector('.avatar')!;
     this.#messages = root.querySelector('.messages')!;
     this.#announcer = root.querySelector('.announcer')!;
     this.#suggestions = root.querySelector('.suggestions')!;
@@ -233,6 +255,8 @@ class View {
 
   /** Applies the Owner's options; called on mount and whenever one changes. */
   configure(options: ViewOptions): void {
+    this.#showAvatar(options.avatar.trim());
+
     const greeting = options.greeting.trim();
     this.#greeting.textContent = greeting;
     this.#greeting.hidden = !greeting;
@@ -279,6 +303,21 @@ class View {
   #setOpen(open: boolean): void {
     this.#panel.hidden = !open;
     this.#bubble.setAttribute('aria-expanded', String(open));
+  }
+
+  /** The Owner's image next to the title, or luzIA's icon. Decorative: the title already says "luzIA". */
+  #showAvatar(url: string): void {
+    const current = this.#avatar.querySelector('img')?.getAttribute('src') ?? null;
+    if (url && current === url) return;
+    if (!url && current === null && this.#avatar.firstChild) return;
+    if (url) {
+      const image = document.createElement('img');
+      image.src = url;
+      image.alt = '';
+      this.#avatar.replaceChildren(image);
+    } else {
+      this.#avatar.innerHTML = LUZIA_ICON;
+    }
   }
 
   /** Sends what the Visitor typed; focus stays in (or returns to) the message box, since Send disables while streaming. */

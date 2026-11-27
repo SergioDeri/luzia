@@ -115,6 +115,12 @@ describe('<LuziaWidget>', () => {
     expect(widget.chatColors()).toEqual({ surface: '#18181b', text: '#f4f4f5' });
   });
 
+  it("shows the Owner's avatar from the avatar prop", async () => {
+    const widget = await renderWidget({ endpoint: '/api/luzia', mode: 'inline', avatar: '/me.jpg' });
+
+    expect(widget.headerAvatar()?.image).toBe('/me.jpg');
+  });
+
   it('applies theme custom properties passed through the style prop', async () => {
     const widget = await renderWidget({ endpoint: '/api/luzia', className: 'portfolio-chat', style: { '--luzia-accent': '#e11d48' } });
 

@@ -100,6 +100,16 @@ export function visitor(host: Element) {
       return panel !== null && !panel.hidden;
     },
     chatTitle: () => chat()?.querySelector('h2')?.textContent ?? null,
+    /** The avatar in the chat header: the Owner's image (its URL) or luzIA's default icon, and whether it is decorative. */
+    headerAvatar: (): { image: string | null; decorative: boolean } | null => {
+      const avatar = chat()?.querySelector<HTMLElement>('header .avatar');
+      if (!avatar || avatar.hidden) return null;
+      const image = avatar.querySelector('img');
+      return {
+        image: image?.getAttribute('src') ?? null,
+        decorative: avatar.getAttribute('aria-hidden') === 'true' || image?.getAttribute('alt') === '',
+      };
+    },
     chatLabel: () => chat()?.getAttribute('aria-label') ?? null,
     click: async (name: string) => {
       button(name).click();
