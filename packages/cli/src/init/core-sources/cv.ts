@@ -63,7 +63,7 @@ export const cvCoreSource: CoreSource = {
     const draft = async (): Promise<ProposedCore | null> => {
       const facts = await draftWithRecovery(context, cv, provider);
       if (!facts) return null;
-      return { ...(await completeCore(context, facts, answers)), files: [cvFile(cv)], redo: async () => (await draft()) ?? questions() };
+      return { ...(await completeCore(context, facts, answers)), files: [cvFile(cv)], drafted: true, redo: async () => (await draft()) ?? questions() };
     };
     const questions = async () => (await questionsCoreSource.create(context))!;
     return (await draft()) ?? questions();

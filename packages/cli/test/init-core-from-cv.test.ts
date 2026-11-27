@@ -48,7 +48,7 @@ describe('luzia init: Core drafted from the CV', () => {
     expect(consent?.message).toMatch(/Anthropic/);
 
     // The drafting prompt carries the CV's text and the stated-facts-only bar.
-    expect(chat.prompts).toHaveLength(1);
+    // (A second call, for the widget copy, finds the fake's queue empty and falls back to defaults.)
     expect(chat.prompts[0]).toContain('Northwind Payments');
     expect(chat.prompts[0]).toMatch(/only (the )?facts.*stated/i);
     expect(chat.prompts[0]).toMatch(/never infer/i);
@@ -70,6 +70,27 @@ describe('luzia init: Core drafted from the CV', () => {
     const artifact = JSON.parse(await readProjectFile(cwd, '.luzia/knowledge-base.json'));
     expect(artifact.chunks.map((chunk: { source: string }) => chunk.source)).toContain('cv.pdf');
     expect(artifact.core.text).toContain('Ada Example');
+  });
+
+  it('lets the model that drafted the Core also propose the widget greeting and suggested questions', async () => {
+    const cwd = await ownerProject('nextjs-app', { 'docs/cv.pdf': await cvFixture('cv.pdf') });
+    const proposal = {
+      greeting: 'Hi! Ask me about Ada’s backend work.',
+      suggestedQuestions: ['What did Ada build at Northwind?', 'Which languages does Ada use?', 'Is Ada open to staff roles?'],
+    };
+    const chat = cvDraftingModel([COMPLETE_CV, proposal as unknown as CvFacts]);
+
+    const run = await runInit(cwd, {
+      answers: fullRunAnswers({ core: cvAnswers({ path: 'docs/cv.pdf' }) }),
+      chatModel: chat.model,
+    });
+
+    expect(run.code).toBe(0);
+    expect(chat.prompts).toHaveLength(2);
+    expect(chat.prompts[1]).toContain('Ada Example');
+    const layout = await readProjectFile(cwd, 'app/layout.tsx');
+    expect(layout).toContain('greeting="Hi! Ask me about Ada’s backend work."');
+    expect(layout).toContain('What did Ada build at Northwind?');
   });
 
   it('sends nothing when the Owner declines, and writes the Core from questions instead', async () => {
@@ -154,7 +175,8 @@ describe('luzia init: Core drafted from the CV', () => {
     });
 
     expect(run.code).toBe(0);
-    expect(chat.prompts).toHaveLength(2);
+    // Two drafts, then the widget copy proposal (which falls back to defaults here).
+    expect(chat.prompts).toHaveLength(3);
     expect(run.stdout).toContain('First draft summary.');
     const core = await readProjectFile(cwd, 'knowledge-base/core.md');
     expect(core).toContain('Second draft summary.');
@@ -207,7 +229,8 @@ describe('luzia init: Core drafted from the CV', () => {
     expect(run.code).toBe(0);
     expect(run.stderr).toMatch(/Anthropic.*failed: Invalid x-api-key/);
     expect(run.stderr).toContain('ANTHROPIC_API_KEY');
-    expect(chat.prompts).toHaveLength(2);
+    // The failed draft, the retry, then the widget copy proposal.
+    expect(chat.prompts).toHaveLength(3);
     const env = await readProjectFile(cwd, '.env.local');
     expect(env).toContain(`ANTHROPIC_API_KEY=${newKey}`);
     expect(env).not.toContain(OWNER_KEYS.anthropic);
