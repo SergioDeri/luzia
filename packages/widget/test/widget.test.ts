@@ -132,7 +132,8 @@ describe('chatting', () => {
     await widget.click('Send');
 
     expect(widget.alert()).toMatch(/luzIA is unavailable/i);
-    expect(widget.transcript()).toEqual([{ role: 'user', text: 'Hello?' }]);
+    expect(widget.transcript()).toEqual([]);
+    expect(widget.messageBoxValue()).toBe('Hello?');
   });
 });
 

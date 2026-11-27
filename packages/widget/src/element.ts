@@ -184,7 +184,6 @@ class View {
   readonly #send: HTMLButtonElement;
   readonly #conversation: Conversation;
   readonly #contact: () => string;
-  #lastSent = '';
   #mode: LuziaWidgetMode = 'bubble';
   #wasStreaming = false;
 
@@ -285,7 +284,6 @@ class View {
   #submit(): void {
     const text = this.#input.value;
     if (!this.#conversation.send(text)) return;
-    this.#lastSent = text;
     this.#input.value = '';
     this.#input.focus();
   }
@@ -333,6 +331,7 @@ class View {
     const conversationOver = failure === 'limit';
     this.#input.disabled = conversationOver;
     this.#send.disabled = streaming || conversationOver;
-    if (failure === 'too-long' && !this.#input.value) this.#input.value = this.#lastSent;
+    // A message that got no reply is given back for editing or resending (see ConversationState.unsent).
+    if (state.unsent !== null && !conversationOver && !this.#input.value) this.#input.value = state.unsent;
   }
 }

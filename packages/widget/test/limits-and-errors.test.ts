@@ -136,6 +136,53 @@ describe('luzIA unavailable', () => {
     expect(widget.alert()).toContain('jamie@example.com');
   });
 
+  it.each([
+    ['luzIA cannot be reached', (server: FakeFetch) => server.failNextWithNetworkError()],
+    ['the chat model fails', (server: FakeFetch) => server.failNextWith(502, 'provider_error')],
+  ])('gives an unanswered message back for editing when %s, so it is not sent twice', async (_name, fail) => {
+    const widget = await openWidget({ contact: 'jamie@example.com' });
+    await ask(widget, 'Who is Jamie?');
+    const first = await server.nextReply();
+    await first.push('Jamie is a developer.');
+    await first.end();
+    fail(server);
+
+    await ask(widget, 'Is Jamie available?');
+
+    expect(widget.transcript()).toEqual([
+      { role: 'user', text: 'Who is Jamie?' },
+      { role: 'assistant', text: 'Jamie is a developer.' },
+    ]);
+    expect(widget.messageBoxValue()).toBe('Is Jamie available?');
+
+    await widget.click('Send');
+    expect(server.requests.at(-1)?.body).toEqual({
+      messages: [
+        { role: 'user', content: 'Who is Jamie?' },
+        { role: 'assistant', content: 'Jamie is a developer.' },
+        { role: 'user', content: 'Is Jamie available?' },
+      ],
+    });
+  });
+
+  it('keeps a reply that broke off mid-stream, so the conversation still alternates', async () => {
+    const widget = await openWidget({ contact: 'jamie@example.com' });
+    await ask(widget, 'Who is Jamie?');
+    const reply = await server.nextReply();
+    await reply.push('Jamie is');
+    await reply.fail();
+
+    await ask(widget, 'Go on?');
+
+    expect(server.requests.at(-1)?.body).toEqual({
+      messages: [
+        { role: 'user', content: 'Who is Jamie?' },
+        { role: 'assistant', content: 'Jamie is' },
+        { role: 'user', content: 'Go on?' },
+      ],
+    });
+  });
+
   it('clears the alert once a later message gets a reply', async () => {
     const widget = await openWidget({ contact: 'jamie@example.com' });
     server.failNextWithNetworkError();

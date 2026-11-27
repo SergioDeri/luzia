@@ -1,4 +1,3 @@
-import { MESSAGE_TOO_LONG_CODE } from './alert.ts';
 import { LuziaRequestError, streamReply, type ChatMessage } from './chat-client.ts';
 
 /** `streaming` while a reply is arriving; `error` after the last request failed. */
@@ -11,6 +10,12 @@ export interface ConversationState {
   readonly status: ConversationStatus;
   /** Why the last request failed, when `status` is `error`. */
   readonly error: LuziaRequestError | null;
+  /**
+   * The Visitor message the last failed request took back out of `messages`
+   * because no reply to it arrived, so the view can give it back for editing.
+   * Keeping it would make the next send carry two Visitor turns in a row.
+   */
+  readonly unsent: string | null;
 }
 
 export interface ConversationOptions {
@@ -35,7 +40,7 @@ export class Conversation {
 
   constructor(options: ConversationOptions) {
     this.#options = options;
-    this.#state = { messages: options.messages ?? [], status: 'idle', error: null };
+    this.#state = { messages: options.messages ?? [], status: 'idle', error: null, unsent: null };
   }
 
   get state(): ConversationState {
@@ -72,14 +77,14 @@ export class Conversation {
     const streaming = this.#abort;
     this.#abort = null;
     streaming?.abort();
-    this.#set({ messages, status: 'idle', error: null });
+    this.#set({ messages, status: 'idle', error: null, unsent: null });
   }
 
   async #stream(history: ChatMessage[]): Promise<void> {
     const abort = new AbortController();
     this.#abort = abort;
     let reply = '';
-    this.#set({ messages: [...history, { role: 'assistant', content: reply }], status: 'streaming', error: null });
+    this.#set({ messages: [...history, { role: 'assistant', content: reply }], status: 'streaming', error: null, unsent: null });
 
     try {
       for await (const piece of streamReply(this.#options.endpoint(), history, abort.signal)) {
@@ -88,14 +93,18 @@ export class Conversation {
         this.#set({ ...this.#state, messages: [...history, { role: 'assistant', content: reply }] });
       }
       if (this.#abort !== abort) return; // reset while streaming
-      this.#set({ messages: withReply(history, reply), status: 'idle', error: null });
+      this.#set({ messages: withReply(history, reply), status: 'idle', error: null, unsent: null });
     } catch (cause) {
       if (this.#abort !== abort) return;
       const error =
         cause instanceof LuziaRequestError ? cause : new LuziaRequestError('network_error', String(cause));
-      // A message the server refused for its length is dropped so the next send doesn't repeat it.
-      const kept = error.code === MESSAGE_TOO_LONG_CODE ? history.slice(0, -1) : withReply(history, reply);
-      this.#set({ messages: kept, status: 'error', error });
+      // A reply that broke off mid-stream is kept, so the conversation still alternates.
+      // A message nothing arrived for is taken back out (see `unsent`).
+      if (reply) {
+        this.#set({ messages: withReply(history, reply), status: 'error', error, unsent: null });
+      } else {
+        this.#set({ messages: history.slice(0, -1), status: 'error', error, unsent: history.at(-1)?.content ?? null });
+      }
     } finally {
       if (this.#abort === abort) this.#abort = null;
     }
