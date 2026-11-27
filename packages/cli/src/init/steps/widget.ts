@@ -25,8 +25,16 @@ export const widgetStep: WizardStep = {
       core?.contact ||
       (await context.prompter.text({ message: 'How should Visitors contact you? (email or URL)', validate: required('a contact') }));
 
-    const proposed = await proposeCopy(context, core);
-    context.say('The widget greets Visitors and offers a few questions to start with:');
+    // On a re-run, the options the widget already has are the starting point.
+    const current = context.state.widget;
+    const proposed = current?.greeting || current?.suggestedQuestions?.length
+      ? currentCopy(current, core)
+      : await proposeCopy(context, core);
+    context.say(
+      current
+        ? 'The widget currently greets Visitors and offers these questions to start with:'
+        : 'The widget greets Visitors and offers a few questions to start with:',
+    );
     context.say(`  Greeting: ${proposed.greeting}`);
     for (const question of proposed.suggestedQuestions) context.say(`  - ${question}`);
     const copy = (await context.prompter.confirm({
@@ -38,7 +46,7 @@ export const widgetStep: WizardStep = {
 
     const theme = await context.prompter.select<NonNullable<WidgetOptions['theme']>>({
       message: 'Widget theme?',
-      initialValue: 'auto',
+      initialValue: current?.theme ?? 'auto',
       options: [
         { value: 'auto', label: 'Auto', hint: 'follows the Visitor’s system setting' },
         { value: 'light', label: 'Light' },
@@ -47,7 +55,7 @@ export const widgetStep: WizardStep = {
     });
     const mode = await context.prompter.select<NonNullable<WidgetOptions['mode']>>({
       message: 'Show the widget as a floating bubble or inline in the page?',
-      initialValue: 'bubble',
+      initialValue: current?.mode ?? 'bubble',
       options: [
         { value: 'bubble', label: 'Bubble', hint: 'a button in the corner that opens the chat' },
         { value: 'inline', label: 'Inline', hint: 'the chat where you place it in the page' },
@@ -57,6 +65,16 @@ export const widgetStep: WizardStep = {
     context.state.widget = { contact, ...copy, theme, mode };
   },
 };
+
+/** The widget's current greeting and questions, completed from the defaults where it has none. */
+function currentCopy(current: WidgetOptions, core: CoreDraft | undefined): WidgetCopy {
+  const defaults = defaultWidgetCopy(core?.ownerName ?? '');
+  const questions = current.suggestedQuestions ?? [];
+  return {
+    greeting: current.greeting || defaults.greeting,
+    suggestedQuestions: defaults.suggestedQuestions.map((question, index) => questions[index] || question) as WidgetCopy['suggestedQuestions'],
+  };
+}
 
 async function editCopy(context: WizardContext, proposed: WidgetCopy): Promise<WidgetCopy> {
   const keep = '(leave empty to keep it)';

@@ -58,11 +58,51 @@ export const standaloneStep: WizardStep = {
   },
 };
 
-/** Asks for the portfolio's domains until every one is a valid origin. */
-async function askOrigins(context: WizardContext): Promise<string[]> {
+/**
+ * Only the allowed origins of an existing standalone server (used by the
+ * re-run menu): asks for them with the current ones as the default, then
+ * changes just the `allowedOrigins` list in the function file, after a diff.
+ */
+export const standaloneOriginsStep: WizardStep = {
+  id: 'standalone-origins',
+  async run(context) {
+    const source = await context.readFile(STANDALONE_FUNCTION);
+    const current = source === null ? null : readAllowedOrigins(source);
+    if (source === null || current === null) {
+      context.say(`luzIA can’t find the allowedOrigins list in ${STANDALONE_FUNCTION}. Change it there yourself.`);
+      context.changes.todo.push(`Set your portfolio’s origins in allowedOrigins in ${STANDALONE_FUNCTION}`);
+      return;
+    }
+    const origins = await askOrigins(context, current);
+    const content = source.replace(ALLOWED_ORIGINS, (_, start: string, _list: string, end: string) => `${start}${originList(origins)}${end}`);
+    if (!(await context.apply({ files: [{ path: STANDALONE_FUNCTION, content }] }, `Update the allowed origins in ${STANDALONE_FUNCTION}?`))) {
+      if (content !== source) context.changes.todo.push(`Set allowedOrigins in ${STANDALONE_FUNCTION} to ${origins.join(', ')}`);
+    }
+  },
+};
+
+/**
+ * Only the widget part of the standalone integration (used by the re-run
+ * menu): prints the snippet again with the widget options just chosen, at the
+ * endpoint read back from the portfolio's page, or the one the Owner enters.
+ */
+export const standaloneWidgetStep: WizardStep = {
+  id: 'standalone-widget',
+  applies: (context) => context.state.project.kind === 'standalone',
+  async run(context) {
+    const endpoint = context.state.endpoint ?? (await askEndpoint(context));
+    context.state.endpoint = endpoint;
+    printSnippet(context, endpoint, 'Replace the <luzia-widget> in your portfolio’s HTML with the one shown above');
+  },
+};
+
+/** Asks for the portfolio's domains until every one is a valid origin; empty keeps `current` when there are some. */
+async function askOrigins(context: WizardContext, current: string[] = []): Promise<string[]> {
   for (;;) {
+    const keep = current.length ? ` (leave empty to keep ${current.join(', ')})` : '';
     const answer = await context.prompter.text({
-      message: 'Your portfolio’s domain(s), comma-separated (e.g. jamie.example.com, www.jamie.example.com)',
+      message: `Your portfolio’s domain(s), comma-separated (e.g. jamie.example.com, www.jamie.example.com)${keep}`,
+      ...(current.length ? { defaultValue: current.join(', ') } : {}),
     });
     const result = parseOrigins(answer);
     if ('origins' in result) {
@@ -140,6 +180,17 @@ async function askEndpoint(context: WizardContext): Promise<string> {
   }
 }
 
+const ALLOWED_ORIGINS = /(allowedOrigins:\s*\[)([^\]]*)(\])/;
+
+/** The origins in the function file's `allowedOrigins: [...]`, `null` when there is no such list of plain strings. */
+export function readAllowedOrigins(source: string): string[] | null {
+  const list = ALLOWED_ORIGINS.exec(source)?.[2];
+  if (list === undefined) return null;
+  const items = list.split(',').map((item) => item.trim()).filter(Boolean);
+  const origins = items.map((item) => /^(['"`])([^'"`]*)\1$/.exec(item)?.[2]);
+  return origins.every((origin): origin is string => origin !== undefined) ? origins : null;
+}
+
 /** A new `package.json`, or the existing one with `"type": "module"` and `luzia build` as (or before) its build. */
 async function packageJsonFile(context: WizardContext): Promise<FileWrite> {
   const source = await context.readFile('package.json');
@@ -182,7 +233,7 @@ const compiledKnowledgeBase = JSON.parse(
 const handler = createLuziaHandler({
   knowledgeBase: loadCompiledKnowledgeBase(compiledKnowledgeBase),
   // Your portfolio's origins (scheme + host, no path): only they may call this server.
-  allowedOrigins: [${origins.map((origin) => `'${origin}'`).join(', ')}],
+  allowedOrigins: [${originList(origins)}],
 });
 
 // A Vercel Function with the Web \`Request\` / \`Response\` signature.
@@ -191,6 +242,10 @@ export const POST = handler;
 export const OPTIONS = handler;
 `,
   };
+}
+
+function originList(origins: string[]): string {
+  return origins.map((origin) => `'${origin}'`).join(', ');
 }
 
 /** `vercel.json` shipping the compiled Knowledge Base with the function (merged into an existing one), and a root page. */
@@ -241,12 +296,16 @@ function installCommands(context: WizardContext): PlannedCommand[] {
   }));
 }
 
-function printSnippet(context: WizardContext, endpoint: string): void {
+function printSnippet(
+  context: WizardContext,
+  endpoint: string,
+  todo = 'Add the script tag and <luzia-widget> shown above to your portfolio’s HTML',
+): void {
   const props: WidgetProps = { endpoint, contact: '', ...context.state.widget };
   context.say('');
   context.say('Add this to your portfolio’s HTML: the script tag in <head>, the widget inside <body>.');
   context.say('');
   for (const line of htmlWidgetSnippet(props)) context.say(line ? `  ${line}` : '');
   context.say('');
-  context.changes.todo.push('Add the script tag and <luzia-widget> shown above to your portfolio’s HTML');
+  context.changes.todo.push(todo);
 }

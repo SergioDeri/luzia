@@ -17,6 +17,8 @@ import { CORE_PATH, KNOWLEDGE_BASE_DIR } from './steps/core.ts';
 import { INSTRUCTIONS_PATH } from './steps/instructions.ts';
 import { ENV_FILE } from './steps/models.ts';
 import { findLayout, routePath } from './steps/nextjs.ts';
+import { readAllowedOrigins, STANDALONE_FUNCTION } from './steps/standalone.ts';
+import { readHtmlWidget, readReactWidget, type WidgetProps } from './widget-snippet.ts';
 
 /** What an earlier `luzia init` (or the Owner) already set up in the project. */
 export interface ExistingSetup {
@@ -34,6 +36,10 @@ export interface ExistingSetup {
   route: string | null;
   /** The file the widget is in, when it was found. */
   widget: string | null;
+  /** The standalone server's function file and the origins it allows (`null` when they can't be read), when there is one. */
+  server: { path: string; origins: string[] | null } | null;
+  /** The widget options that could be read back from where the widget is (`{}` when none). */
+  widgetOptions: Partial<WidgetProps>;
 }
 
 /**
@@ -76,6 +82,11 @@ export function useExistingSetup(context: WizardContext, setup: ExistingSetup): 
   if (setup.models) context.state.models = setup.models;
   context.state.core = setup.core;
   if (setup.instructions !== null) context.state.instructions = setup.instructions;
+  const { endpoint: _endpoint, contact: _contact, ...widget } = setup.widgetOptions;
+  if (Object.keys(widget).length) context.state.widget = { contact: setup.core.contact, ...widget };
+  if (context.state.project.kind === 'standalone' && setup.widgetOptions.endpoint) {
+    context.state.endpoint = setup.widgetOptions.endpoint;
+  }
 }
 
 function modelsFrom(env: Record<string, string>): ModelChoices | null {
@@ -100,14 +111,39 @@ async function otherKnowledgeBaseFiles(cwd: string): Promise<string[]> {
     .sort();
 }
 
-/** The server route and the widget in the project, for a Next.js app. */
-async function integration(context: WizardContext): Promise<Pick<ExistingSetup, 'route' | 'widget'>> {
+/**
+ * A page of a standalone folder (top level or `public/`) with `<luzia-widget>`,
+ * when the portfolio lives in the same folder, and the widget options it has.
+ */
+async function htmlPageWithWidget(context: WizardContext): Promise<{ path: string; widget: Partial<WidgetProps> } | null> {
+  for (const dir of ['', 'public']) {
+    const entries = await readdir(path.join(context.cwd, dir), { withFileTypes: true }).catch(() => []);
+    const pages = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.html')).map((entry) => entry.name).sort();
+    for (const name of pages) {
+      const file = dir ? `${dir}/${name}` : name;
+      const widget = readHtmlWidget((await context.readFile(file)) ?? '');
+      if (widget) return { path: file, widget };
+    }
+  }
+  return null;
+}
+
+/** The server route and the widget in the project, for a Next.js app; the standalone server otherwise. */
+async function integration(
+  context: WizardContext,
+): Promise<Pick<ExistingSetup, 'route' | 'widget' | 'server' | 'widgetOptions'>> {
   const { project } = context.state;
-  if (project.kind !== 'nextjs') return { route: null, widget: null };
+  if (project.kind !== 'nextjs') {
+    const source = await context.readFile(STANDALONE_FUNCTION);
+    const server = source === null ? null : { path: STANDALONE_FUNCTION, origins: readAllowedOrigins(source) };
+    const page = await htmlPageWithWidget(context);
+    return { route: null, widget: page?.path ?? null, server, widgetOptions: page?.widget ?? {} };
+  }
   let route: string | null = null;
   for (const extension of ['ts', 'js'] as const) {
     if ((await context.readFile(routePath(project, extension))) !== null) route = route ?? routePath(project, extension);
   }
   const layout = await findLayout(context);
-  return { route, widget: layout.content?.includes('<LuziaWidget') ? layout.path : null };
+  const widgetOptions = layout.content === null ? null : readReactWidget(layout.content);
+  return { route, widget: widgetOptions ? layout.path : null, server: null, widgetOptions: widgetOptions ?? {} };
 }

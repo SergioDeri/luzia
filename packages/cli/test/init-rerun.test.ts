@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -6,15 +6,18 @@ import {
   coreAnswers,
   EXISTING_KEYS,
   existingSetupProject,
+  existingStandaloneProject,
   fakeEmbeddingModel,
   fakeRunner,
   instructionsAnswers,
+  integrationAnswers,
   modelAnswers,
   productionAnswers,
   widgetAnswers,
   readProjectFile,
   runInit,
   rerunAnswers,
+  standaloneAnswers,
   unusedChatModel,
 } from './support/init-harness.ts';
 
@@ -220,6 +223,85 @@ describe('luzia init: re-run on an existing setup', () => {
       expect(run.commands).toEqual([]);
     });
 
+    it('starts from the widget options in the layout, so keeping them changes nothing', async () => {
+      const cwd = await existingSetupProject({
+        'app/layout.tsx': `import type { ReactNode } from 'react';
+import { LuziaWidget } from '@luzia/react';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <LuziaWidget
+          endpoint="/api/luzia"
+          contact="hello@jamie.dev"
+          greeting="Hey there! Ask me anything about Jamie's work."
+          suggestedQuestions={[
+            "What does Jamie build?",
+            "Is Jamie open to relocation?",
+            "How do I reach Jamie?",
+          ]}
+          theme="dark"
+          mode="inline"
+        />
+      </body>
+    </html>
+  );
+}
+`,
+      });
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['widget', widgetAnswers({ theme: 'dark', mode: 'inline' })]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toContain("Greeting: Hey there! Ask me anything about Jamie's work.");
+      expect(run.stdout).toContain('- Is Jamie open to relocation?');
+      const initial = (question: RegExp) => run.asked.find((asked) => question.test(asked.message))?.initialValue;
+      expect(initial(/theme/i)).toBe('dark');
+      expect(initial(/bubble|inline/i)).toBe('inline');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
+
+    it('offers the current greeting and questions as the defaults when editing them', async () => {
+      const cwd = await existingSetupProject({
+        'app/layout.tsx': `import { LuziaWidget } from '@luzia/react';
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <LuziaWidget endpoint="/api/luzia" contact="hello@jamie.dev" greeting="Hello from Jamie's agent" theme="light" />
+      </body>
+    </html>
+  );
+}
+`,
+      });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers([
+          'widget',
+          [
+            ...widgetAnswers({ edit: { questions: ['What is Jamie’s stack?'] }, theme: 'light' }),
+            answer.confirm(/Add the widget to/, true),
+          ],
+        ]),
+      });
+
+      expect(run.code).toBe(0);
+      const layout = await readProjectFile(cwd, 'app/layout.tsx');
+      expect(layout).toContain('greeting="Hello from Jamie\'s agent"');
+      expect(layout).toContain('"What is Jamie’s stack?"');
+      // Questions the layout didn't set start from the defaults.
+      expect(layout).toContain('"What is Jamie’s experience?"');
+      expect(layout).toContain('theme="light"');
+    });
+
     it('reads the name and contact from a Core the Owner wrote by hand', async () => {
       const cwd = await existingSetupProject({
         'knowledge-base/core.md': '# Jamie Rivera\n\nI build web products. Reach me at jamie@hand.example or on GitHub.\n',
@@ -281,5 +363,164 @@ describe('luzia init: re-run on an existing setup', () => {
     expect(changedFiles(before, await snapshot(cwd))).toEqual(['.luzia/knowledge-base.json', 'app/layout.tsx', 'knowledge-base/instructions.md']);
     const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
     expect(summary).toMatch(/Updated: .*knowledge-base\/instructions\.md.*app\/layout\.tsx/);
+  });
+
+  describe('standalone server', () => {
+    it('summarises the server and its allowed origins, and offers to change them', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, { answers: rerunAnswers() });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Server: api\/luzia\.ts \(allowed origins: https:\/\/jamie\.example\.com, https:\/\/www\.jamie\.example\.com\)/);
+      expect(run.stdout).not.toMatch(/Route:/);
+      const menu = run.asked.find((asked) => /What do you want to change/.test(asked.message));
+      expect(menu?.options).toEqual(['models', 'core', 'instructions', 'widget', 'origins', 'production', 'done']);
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
+
+    it('changes the allowed origins in the function file after a diff, leaving the rest of it as it is', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+      const embeddings = fakeEmbeddingModel();
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers([
+          'origins',
+          [
+            answer.text(/portfolio.*domain/i, 'jamie.example.com, localhost:8080'),
+            answer.confirm(/allowed origins.*api\/luzia\.ts/, true),
+          ],
+        ]),
+        embeddingModel: embeddings.model,
+      });
+
+      expect(run.code).toBe(0);
+      // The current origins are shown, and kept when the answer is left empty.
+      expect(run.asked.find((asked) => /domain/i.test(asked.message))?.message).toContain(
+        'https://jamie.example.com, https://www.jamie.example.com',
+      );
+      expect(run.stdout).toMatch(/Update api\/luzia\.ts:[\s\S]*-\s+allowedOrigins: \['https:\/\/jamie\.example\.com', 'https:\/\/www\.jamie\.example\.com'\],[\s\S]*\+\s+allowedOrigins: \['https:\/\/jamie\.example\.com', 'http:\/\/localhost:8080'\],/);
+      const fn = await readProjectFile(cwd, 'api/luzia.ts');
+      expect(fn).toContain("allowedOrigins: ['https://jamie.example.com', 'http://localhost:8080'],");
+      expect(fn).toContain('export const OPTIONS = handler;');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual(['api/luzia.ts']);
+      expect(embeddings.embeddedValues).toEqual([]);
+      expect(run.commands).toEqual([]);
+    });
+
+    it('keeps the allowed origins when the answer is left empty', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, { answers: rerunAnswers(['origins', [answer.text(/portfolio.*domain/i, '')]]) });
+
+      expect(run.code).toBe(0);
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+    });
+
+    it('reprints the snippet with the new widget options, with the placeholder endpoint when the server URL is unknown', async () => {
+      const cwd = await existingStandaloneProject();
+      const before = await snapshot(cwd);
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['widget', [...widgetAnswers({ theme: 'dark' }), answer.text(/server.*URL/i, '')]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script>');
+      const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
+      expect(snippet).toContain('endpoint="https://YOUR-LUZIA-SERVER.vercel.app/api/luzia"');
+      expect(snippet).toContain('contact="hello@jamie.dev"');
+      expect(snippet).toContain('theme="dark"');
+      const summary = run.stdout.slice(run.stdout.lastIndexOf('Summary'));
+      expect(summary).toContain('YOUR-LUZIA-SERVER');
+      expect(changedFiles(before, await snapshot(cwd))).toEqual([]);
+      expect(run.commands).toEqual([]);
+    });
+
+    it('reads the widget options and endpoint back from a page in the folder that has the widget', async () => {
+      const cwd = await existingStandaloneProject({
+        'index.html': `<!doctype html>
+<html>
+  <head><script type="module" src="https://cdn.jsdelivr.net/npm/@luzia/widget/dist/luzia-widget.js"></script></head>
+  <body>
+    <luzia-widget
+      endpoint="https://luzia-jamie.vercel.app/api/luzia"
+      contact="hello@jamie.dev"
+      greeting="Welcome! Ask about Jamie&#39;s projects."
+      suggested-questions="[&quot;What has Jamie shipped?&quot;,&quot;Where is Jamie based?&quot;,&quot;Can I hire Jamie?&quot;]"
+      theme="light"
+      mode="inline"
+    ></luzia-widget>
+  </body>
+</html>
+`,
+      });
+
+      const run = await runInit(cwd, { answers: rerunAnswers(['widget', widgetAnswers({ theme: 'light', mode: 'bubble' })]) });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Widget: in index\.html/);
+      expect(run.stdout).toContain("Greeting: Welcome! Ask about Jamie's projects.");
+      const initial = (question: RegExp) => run.asked.find((asked) => question.test(asked.message))?.initialValue;
+      expect(initial(/theme/i)).toBe('light');
+      expect(initial(/bubble|inline/i)).toBe('inline');
+      const snippet = run.stdout.slice(run.stdout.indexOf('<luzia-widget'), run.stdout.indexOf('</luzia-widget>'));
+      expect(snippet).toContain('endpoint="https://luzia-jamie.vercel.app/api/luzia"');
+      expect(snippet).toContain('suggested-questions="[&quot;What has Jamie shipped?&quot;');
+      expect(snippet).toContain('mode="bubble"');
+      expect(run.stdout).not.toContain('YOUR-LUZIA-SERVER');
+    });
+  });
+
+  describe('partial setup: a Core without the integration', () => {
+    it('on Next.js, offers to set up the integration and adds the route, the widget and the scripts', async () => {
+      const cwd = await existingSetupProject({}, { integration: false });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['integration', [...widgetAnswers({ theme: 'dark' }), ...integrationAnswers()]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Route: not found/);
+      const menus = run.asked.filter((asked) => /What do you want to change/.test(asked.message));
+      expect(menus[0]?.options).toEqual(['integration', 'models', 'core', 'instructions', 'widget', 'production', 'done']);
+      expect(menus[0]?.initialValue).toBe('integration');
+      // Once set up, the entry is gone.
+      expect(menus[1]?.options).not.toContain('integration');
+
+      expect(await readProjectFile(cwd, 'app/api/luzia/route.ts')).toContain('createLuziaHandler');
+      const layout = await readProjectFile(cwd, 'app/layout.tsx');
+      expect(layout).toContain('contact="hello@jamie.dev"');
+      expect(layout).toContain('theme="dark"');
+      const packageJson = JSON.parse(await readProjectFile(cwd, 'package.json'));
+      expect(packageJson.scripts.dev).toMatch(/^luzia build && /);
+      expect(run.commands).toEqual(['pnpm add @luzia/core @luzia/react', 'pnpm add -D @luzia/cli']);
+    });
+
+    it('on a standalone folder, offers to set up the server, then builds the missing Knowledge Base', async () => {
+      const cwd = await existingStandaloneProject({}, { server: false });
+      await rm(path.join(cwd, '.luzia'), { recursive: true });
+
+      const run = await runInit(cwd, {
+        answers: rerunAnswers(['integration', [...widgetAnswers(), ...standaloneAnswers()]]),
+      });
+
+      expect(run.code).toBe(0);
+      expect(run.stdout).toMatch(/Server: not set up yet/);
+      const menus = run.asked.filter((asked) => /What do you want to change/.test(asked.message));
+      expect(menus[0]?.options).toEqual(['integration', 'models', 'core', 'instructions', 'widget', 'production', 'done']);
+      // Once the server exists, its allowed origins can be changed instead.
+      expect(menus[1]?.options).toEqual(['models', 'core', 'instructions', 'widget', 'origins', 'production', 'done']);
+
+      expect(await readProjectFile(cwd, 'api/luzia.ts')).toContain(
+        "allowedOrigins: ['https://jamie.example.com', 'https://www.jamie.example.com']",
+      );
+      expect(run.stdout).toContain('<luzia-widget');
+      expect(run.stdout).toContain('contact="hello@jamie.dev"');
+      expect(JSON.parse(await readProjectFile(cwd, '.luzia/knowledge-base.json')).core.text).toContain('hello@jamie.dev');
+    });
   });
 });
