@@ -4,12 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "luzia:build": "luzia build",
-    "luzia:eval": "luzia build && luzia eval",
-    "predev": "luzia build",
-    "dev": "next dev",
-    "prebuild": "luzia build",
-    "build": "next build",
+    "dev": "luzia build && next dev",
+    "build": "luzia build && next build",
+    "eval": "luzia build && luzia eval",
     "start": "next start",
     "typecheck": "luzia build && tsc --noEmit"
   },
