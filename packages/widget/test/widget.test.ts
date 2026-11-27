@@ -19,6 +19,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.body.replaceChildren();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
 });
 

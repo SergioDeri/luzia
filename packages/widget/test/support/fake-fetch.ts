@@ -6,6 +6,8 @@ export interface RecordedRequest {
   method: string;
   headers: Headers;
   body: unknown;
+  /** Whether the widget has since cancelled the request (e.g. the Visitor started over). */
+  cancelled(): boolean;
 }
 
 /** The server side of one in-flight streamed reply, driven by the test. */
@@ -40,6 +42,7 @@ export function installFakeFetch(): FakeFetch {
       method: init?.method ?? 'GET',
       headers: new Headers(init?.headers),
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : init?.body,
+      cancelled: () => init?.signal?.aborted ?? false,
     });
 
     if (failNext) {
@@ -54,13 +57,19 @@ export function installFakeFetch(): FakeFetch {
         controller = c;
       },
     });
+    // Like a real fetch, cancelling the request cuts the reply stream off.
+    let cut = false;
+    init?.signal?.addEventListener('abort', () => {
+      cut = true;
+      controller.error(new DOMException('The operation was aborted.', 'AbortError'));
+    });
     const reply: FakeReply = {
       push: async (text) => {
-        controller.enqueue(encoder.encode(text));
+        if (!cut) controller.enqueue(encoder.encode(text));
         await settle();
       },
       end: async () => {
-        controller.close();
+        if (!cut) controller.close();
         await settle();
       },
     };

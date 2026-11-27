@@ -28,6 +28,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   document.body.replaceChildren();
+  sessionStorage.clear();
   vi.unstubAllGlobals();
 });
 

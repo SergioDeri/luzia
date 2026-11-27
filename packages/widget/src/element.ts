@@ -1,4 +1,5 @@
 import { Conversation, type ConversationState } from './conversation.ts';
+import { persistConversation, storageKey } from './persistence.ts';
 import { styles } from './styles.ts';
 
 /** Tag name the widget is registered under. */
@@ -21,6 +22,7 @@ const TEMPLATE = `
   <section class="panel" role="dialog" aria-label="luzIA" hidden>
     <header class="header">
       <h2 class="title">luzIA</h2>
+      <button type="button" class="new-conversation">New conversation</button>
       <button type="button" class="close" aria-label="Close luzIA chat">&times;</button>
     </header>
     <ol class="messages" role="log" aria-live="polite"></ol>
@@ -58,6 +60,7 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     if (this.#view) return;
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${styles}</style>${TEMPLATE}`;
+    persistConversation(this.conversation, storageKey(this.endpoint));
     this.#view = new View(root, this.conversation);
   }
 }
@@ -85,6 +88,10 @@ class View {
 
     this.#bubble.addEventListener('click', () => this.#setOpen(this.#bubble.getAttribute('aria-expanded') !== 'true'));
     root.querySelector('.close')!.addEventListener('click', () => this.#setOpen(false));
+    root.querySelector('.new-conversation')!.addEventListener('click', () => {
+      conversation.reset();
+      this.#input.focus();
+    });
     this.#form.addEventListener('submit', (event) => {
       event.preventDefault();
       this.#submit();

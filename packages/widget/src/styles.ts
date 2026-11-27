@@ -49,6 +49,17 @@ export const styles = `
     color: var(--luzia-accent-contrast);
   }
   .title { margin: 0; font-size: 1rem; }
+  .new-conversation {
+    margin-inline: auto 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid currentColor;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
   .close {
     border: none;
     background: transparent;
