@@ -6,8 +6,12 @@ import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json';
 // provider's API key (e.g. ANTHROPIC_API_KEY), all server-side only. Once the
 // Knowledge Base has files besides the Core and Instructions, the embeddings
 // model is read from LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL.
+// Same-origin requests need no origin configuration; to serve the widget on
+// another site, set LUZIA_ALLOWED_ORIGINS (comma-separated) or `allowedOrigins`.
 const handler = createLuziaHandler({
   knowledgeBase: loadCompiledKnowledgeBase(compiledKnowledgeBase),
 });
 
 export const POST = handler;
+// Answers CORS preflight for allowed origins.
+export const OPTIONS = handler;

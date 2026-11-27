@@ -6,9 +6,11 @@ import { errorResponse } from './http.ts';
 import type { CompiledKnowledgeBase } from './knowledge-base/compiled.ts';
 import { loadCompiledKnowledgeBase } from './knowledge-base/load.ts';
 import { assembleSystemPrompt } from './prompt/system-prompt.ts';
+import { replyResponse } from './reply-stream.ts';
+import { createProtection, type ProtectionConfig } from './protection/index.ts';
 import { createRetriever, type RetrievalOptions } from './retrieval/retriever.ts';
 
-export interface LuziaHandlerConfig {
+export interface LuziaHandlerConfig extends ProtectionConfig {
   /** The compiled Knowledge Base produced by `luzia build` (e.g. its imported JSON). */
   knowledgeBase: CompiledKnowledgeBase;
   /**
@@ -57,6 +59,8 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
   const env = config.env ?? globalThis.process?.env ?? {};
   const knowledgeBase = loadCompiledKnowledgeBase(config.knowledgeBase);
   const model = resolveChatModel(config.chat, env);
+  // Origins, CORS and limits: see ./protection.
+  const protection = createProtection(config, env);
   const retrieve = createRetriever({
     knowledgeBase,
     embedding: config.embedding,
@@ -64,7 +68,7 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
     ...(config.retrieval ? { retrieval: config.retrieval } : {}),
   });
 
-  return async function luziaHandler(request) {
+  return protection.wrap(async function luziaHandler(request) {
     if (request.method !== 'POST') {
       return errorResponse(405, 'method_not_allowed', 'Use POST to chat with luzIA.', { allow: 'POST' });
     }
@@ -74,6 +78,9 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
       return errorResponse(400, 'invalid_request', 'Expected a JSON body like { "messages": [{ "role": "user", "content": "..." }] }.');
     }
 
+    const overLimit = protection.checkLimits(body.data.messages);
+    if (overLimit) return overLimit;
+
     const messages: ModelMessage[] = body.data.messages;
     const retrievedChunks = await retrieve(body.data.messages);
 
@@ -82,8 +89,9 @@ export function createLuziaHandler(config: LuziaHandlerConfig): LuziaHandler {
       // AI SDK "instructions" is the system prompt; the Owner's Instructions are one part of it.
       instructions: assembleSystemPrompt({ knowledgeBase, retrievedChunks }),
       messages,
+      maxOutputTokens: protection.limits.maxOutputTokens,
     });
 
-    return result.toTextStreamResponse();
-  };
+    return replyResponse(result.fullStream);
+  });
 }

@@ -72,6 +72,17 @@ describe('<LuziaWidget>', () => {
     expect(server.requests[0]?.url).toBe('/api/new');
   });
 
+  it('shows the contact prop when luzIA is unavailable', async () => {
+    const widget = await renderWidget({ endpoint: '/api/luzia', contact: 'jamie@example.com' });
+    await widget.click('luzIA chat');
+    server.failNextWithNetworkError();
+    widget.type('Hi');
+    await widget.click('Send');
+
+    expect(widget.alert()).toMatch(/luzIA is unavailable/i);
+    expect(widget.alertLink()).toBe('mailto:jamie@example.com');
+  });
+
   it('shows the greeting prop and sends a clicked suggested question from the array prop', async () => {
     const widget = await renderWidget({
       endpoint: '/api/luzia',

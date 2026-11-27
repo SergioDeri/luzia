@@ -7,6 +7,7 @@ export default function Home() {
       <p>Full-stack developer. Open the luzIA bubble in the corner to ask about Jamie.</p>
       <LuziaWidget
         endpoint="/api/luzia"
+        contact="jamie.rivera@example.com"
         theme="auto"
         greeting="Hi! I'm luzIA, an AI agent that answers questions about Jamie. What would you like to know?"
         suggestedQuestions={[

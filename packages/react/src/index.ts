@@ -23,6 +23,7 @@ export interface LuziaWidgetProps extends LuziaWidgetConfig {
 /** The luzIA chat widget: a floating bubble (or an inline chat) to talk with the Agent. */
 export function LuziaWidget({
   endpoint,
+  contact,
   greeting,
   suggestedQuestions,
   mode,
@@ -32,6 +33,7 @@ export function LuziaWidget({
 }: LuziaWidgetProps): ReactElement {
   return createElement(LUZIA_WIDGET_TAG, {
     endpoint,
+    contact,
     greeting,
     mode,
     theme,
