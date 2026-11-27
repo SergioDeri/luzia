@@ -38,7 +38,7 @@ export interface LuziaWidgetConfig {
    */
   theme?: LuziaWidgetTheme;
   /**
-   * URL of an image shown next to the "luzIA" title in the chat header (the
+   * URL of an image shown large and centred at the top of the chat, like a video call (the
    * Owner's photo, a logo…). Without one, luzIA's own icon is shown.
    */
   avatar?: string;
@@ -60,11 +60,14 @@ const LUZIA_ICON = `<svg viewBox="0 0 32 32" width="100%" height="100%" focusabl
 const TEMPLATE = `
   <section class="panel" role="dialog" aria-label="luzIA" hidden>
     <header class="header">
-      <span class="avatar" aria-hidden="true"></span>
       <h2 class="title">luzIA</h2>
       <button type="button" class="new-conversation">New conversation</button>
       <button type="button" class="close" aria-label="Close luzIA chat">&times;</button>
     </header>
+    <div class="stage">
+      <span class="avatar" aria-hidden="true"></span>
+      <p class="stage-name" aria-hidden="true">luzIA</p>
+    </div>
     <div class="body">
       <p class="greeting" hidden></p>
       <ol class="messages" role="log" aria-live="off"></ol>
@@ -197,6 +200,7 @@ class View {
   readonly #body: HTMLElement;
   readonly #greeting: HTMLElement;
   readonly #avatar: HTMLElement;
+  readonly #stage: HTMLElement;
   readonly #messages: HTMLOListElement;
   readonly #announcer: HTMLElement;
   readonly #suggestions: HTMLUListElement;
@@ -218,6 +222,7 @@ class View {
     this.#body = root.querySelector('.body')!;
     this.#greeting = root.querySelector('.greeting')!;
     this.#avatar = root.querySelector('.avatar')!;
+    this.#stage = root.querySelector('.stage')!;
     this.#messages = root.querySelector('.messages')!;
     this.#announcer = root.querySelector('.announcer')!;
     this.#suggestions = root.querySelector('.suggestions')!;
@@ -305,7 +310,7 @@ class View {
     this.#bubble.setAttribute('aria-expanded', String(open));
   }
 
-  /** The Owner's image next to the title, or luzIA's icon. Decorative: the title already says "luzIA". */
+  /** The Owner's image at the top of the chat, or luzIA's icon. Decorative: the title already says "luzIA". */
   #showAvatar(url: string): void {
     const current = this.#avatar.querySelector('img')?.getAttribute('src') ?? null;
     if (url && current === url) return;
@@ -362,6 +367,8 @@ class View {
     this.#body.scrollTop = this.#body.scrollHeight;
 
     const streaming = state.status === 'streaming';
+    // Like a video call: luzIA's avatar lights up while the reply comes in.
+    this.#stage.toggleAttribute('data-speaking', streaming);
     this.#messages.setAttribute('aria-busy', String(streaming));
     this.#announce(state, streaming);
 

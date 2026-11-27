@@ -118,7 +118,7 @@ describe('<LuziaWidget>', () => {
   it("shows the Owner's avatar from the avatar prop", async () => {
     const widget = await renderWidget({ endpoint: '/api/luzia', mode: 'inline', avatar: '/me.jpg' });
 
-    expect(widget.headerAvatar()?.image).toBe('/me.jpg');
+    expect(widget.avatar()?.image).toBe('/me.jpg');
   });
 
   it('applies theme custom properties passed through the style prop', async () => {

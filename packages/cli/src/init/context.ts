@@ -42,7 +42,7 @@ export interface WidgetOptions {
   suggestedQuestions?: string[];
   theme?: 'auto' | 'light' | 'dark';
   mode?: 'bubble' | 'inline';
-  /** Image URL for the chat header (as the browser loads it); luzIA's icon when unset. */
+  /** Image URL for the avatar at the top of the chat (as the browser loads it); luzIA's icon when unset. */
   avatar?: string;
 }
 

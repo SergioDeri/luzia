@@ -9,6 +9,7 @@
  * - `--luzia-border`: input and inline-panel borders
  * - `--luzia-font`: font family
  * - `--luzia-inline-height`: height of the chat in inline mode
+ * - `--luzia-avatar-size`: size of luzIA's picture at the top of the chat (default: 6rem to 10rem, by screen height)
  *
  * Every control is at least 44px square (a comfortable tap target) and shows
  * a focus ring for keyboard users. Below 480px wide the bubble's chat fills
@@ -23,7 +24,7 @@ export const styles = `
     --luzia-muted: #f4f4f5;
     --luzia-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
     --luzia-border: #d4d4d8;
-    --luzia-inline-height: 32rem;
+    --luzia-inline-height: 38rem;
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
@@ -84,7 +85,7 @@ export const styles = `
     display: flex;
     flex-direction: column;
     width: min(24rem, calc(100vw - 2.5rem));
-    height: min(34rem, calc(100vh - 7rem));
+    height: min(40rem, calc(100vh - 7rem));
     margin-bottom: 0.75rem;
     background: var(--luzia-surface);
     border-radius: 1rem;
@@ -112,15 +113,39 @@ export const styles = `
     background: var(--luzia-accent);
     color: var(--luzia-accent-contrast);
   }
-  .avatar {
+  /* Like a video call: luzIA's picture large and centred at the top, the conversation below it. */
+  .stage {
     flex: none;
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-inline-end: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--luzia-border);
+  }
+  .avatar {
+    display: block;
+    width: var(--luzia-avatar-size, clamp(6rem, 26vh, 10rem));
+    aspect-ratio: 1;
     border-radius: 50%;
     overflow: hidden;
+    background: var(--luzia-muted);
+    box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 5px var(--luzia-border);
+    transition: box-shadow 0.2s ease;
   }
-  .avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .avatar img,
+  .avatar svg { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .stage-name { margin: 0; font-weight: 600; font-size: 0.95rem; }
+  .stage[data-speaking] .avatar {
+    box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 6px var(--luzia-accent);
+    animation: luzia-speaking 1.4s ease-in-out infinite;
+  }
+  @keyframes luzia-speaking {
+    50% { box-shadow: 0 0 0 3px var(--luzia-surface), 0 0 0 10px color-mix(in srgb, var(--luzia-accent) 35%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stage[data-speaking] .avatar { animation: none; }
+  }
   .title { margin: 0; font-size: 1rem; }
   .new-conversation {
     margin-inline: auto 0.5rem;

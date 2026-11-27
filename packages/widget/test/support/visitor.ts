@@ -100,15 +100,23 @@ export function visitor(host: Element) {
       return panel !== null && !panel.hidden;
     },
     chatTitle: () => chat()?.querySelector('h2')?.textContent ?? null,
-    /** The avatar in the chat header: the Owner's image (its URL) or luzIA's default icon, and whether it is decorative. */
-    headerAvatar: (): { image: string | null; decorative: boolean } | null => {
-      const avatar = chat()?.querySelector<HTMLElement>('header .avatar');
-      if (!avatar || avatar.hidden) return null;
+    /** luzIA's avatar at the top of the chat (like a video call): the Owner's image (its URL) or luzIA's icon. */
+    avatar: (): { image: string | null; decorative: boolean; speaking: boolean } | null => {
+      const stage = chat()?.querySelector<HTMLElement>('.stage');
+      const avatar = stage?.querySelector<HTMLElement>('.avatar');
+      if (!stage || !avatar || stage.hidden) return null;
       const image = avatar.querySelector('img');
       return {
         image: image?.getAttribute('src') ?? null,
         decorative: avatar.getAttribute('aria-hidden') === 'true' || image?.getAttribute('alt') === '',
+        speaking: stage.hasAttribute('data-speaking'),
       };
+    },
+    /** Whether the avatar comes before the conversation in the chat (on top of it). */
+    avatarAboveConversation: (): boolean => {
+      const stage = chat()?.querySelector('.stage');
+      const log = chat()?.querySelector('[role="log"]');
+      return Boolean(stage && log && stage.compareDocumentPosition(log) & Node.DOCUMENT_POSITION_FOLLOWING && !stage.contains(log));
     },
     chatLabel: () => chat()?.getAttribute('aria-label') ?? null,
     click: async (name: string) => {

@@ -77,7 +77,7 @@ The Instructions are written from fixed templates, with no model call, shown in 
 - **Greeting and three suggested questions**: proposed by your chat model from the Core when you drafted it from your CV, or fixed defaults otherwise. Keep them or edit each one.
 - **Theme**: auto (follows the Visitor's system setting), light or dark.
 - **Mode**: a floating bubble in the corner, or inline where you place it in the page.
-- **Avatar** (optional): an image shown next to the luzIA title in the chat header. In a Next.js app, give a path to an image in the project: one already in `public/` is used in place, any other is copied to `public/luzia-avatar.<ext>` after you confirm. A URL is used as it is. On a standalone setup, give the URL or path as your portfolio serves it. Leave it empty to show luzIA's own icon.
+- **Avatar** (optional): an image shown large and centred at the top of the chat, like a video call. In a Next.js app, give a path to an image in the project: one already in `public/` is used in place, any other is copied to `public/luzia-avatar.<ext>` after you confirm. A URL is used as it is. On a standalone setup, give the URL or path as your portfolio serves it. Leave it empty to show luzIA's own icon.
 
 **6a. Next.js integration.** Each change is shown and confirmed on its own:
 
