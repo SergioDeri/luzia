@@ -4,8 +4,12 @@ import compiledKnowledgeBase from '../../../.luzia/knowledge-base.json';
 
 // The chat model is read from LUZIA_CHAT_PROVIDER / LUZIA_CHAT_MODEL and the
 // provider's API key (e.g. ANTHROPIC_API_KEY), all server-side only.
+// Same-origin requests need no origin configuration; to serve the widget on
+// another site, set LUZIA_ALLOWED_ORIGINS (comma-separated) or `allowedOrigins`.
 const handler = createLuziaHandler({
   knowledgeBase: loadCompiledKnowledgeBase(compiledKnowledgeBase),
 });
 
 export const POST = handler;
+// Answers CORS preflight for allowed origins.
+export const OPTIONS = handler;

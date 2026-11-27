@@ -1,5 +1,15 @@
 /** Machine-readable error codes the handler returns in JSON error bodies. */
-export type LuziaErrorCode = 'method_not_allowed' | 'invalid_request';
+export type LuziaErrorCode =
+  | 'method_not_allowed'
+  | 'invalid_request'
+  /** The request's `Origin` is not in the allowed origins (403). */
+  | 'origin_not_allowed'
+  /** The conversation has more Visitor messages than `limits.maxMessages` (429). */
+  | 'conversation_limit_reached'
+  /** A Visitor message is longer than `limits.maxMessageLength` (413). */
+  | 'message_too_long'
+  /** The chat model failed before replying (502). A failure mid-reply breaks the stream instead. */
+  | 'provider_error';
 
 /** Body of every non-streamed error response: `{ error: { code, message } }`. */
 export interface LuziaErrorBody {

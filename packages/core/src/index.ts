@@ -13,4 +13,6 @@ export type { ChatRequestBody, LuziaHandler, LuziaHandlerConfig } from './handle
 export { CHAT_MODEL_ENV, CHAT_PROVIDER_ENV, CHAT_PROVIDERS, resolveChatModel } from './chat-model.ts';
 export type { ChatModelConfig, ChatModelInstance, ChatProvider, Env } from './chat-model.ts';
 export type { LuziaErrorBody, LuziaErrorCode } from './http.ts';
+export { ALLOWED_ORIGINS_ENV, DEFAULT_LIMITS, LIMIT_ENV } from './protection/index.ts';
+export type { LuziaLimits, ProtectionConfig } from './protection/index.ts';
 export { KnowledgeBaseError, LuziaConfigError } from './errors.ts';
