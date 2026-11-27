@@ -19,6 +19,13 @@ function vercelCli(respond: Parameters<typeof fakeRunner>[0] = () => ({})) {
   );
 }
 
+/** The `vercel env add` arguments luzIA uses: non-interactive, API keys stored as sensitive. */
+function addArgs(name: string, environment: string): string[] {
+  const sensitive = name.startsWith('LUZIA_') ? [] : ['--sensitive'];
+  return ['env', 'add', name, '--environment', environment, '--yes', ...sensitive];
+}
+const addLine = (name: string, environment: string) => ['vercel', ...addArgs(name, environment)].join(' ');
+
 describe('luzia init: production variables', () => {
   it('uploads every variable to a linked Vercel project after one confirmation, with values only on stdin', async () => {
     const cwd = await ownerProject('nextjs-app', LINKED);
@@ -31,8 +38,8 @@ describe('luzia init: production variables', () => {
     const uploads = run.requests.filter((request) => request.command === 'vercel' && request.args[0] === 'env');
     expect(uploads.map((request) => request.args)).toEqual(
       LUZIA_VARIABLES.flatMap((name) => [
-        ['env', 'add', name, 'production'],
-        ['env', 'add', name, 'preview'],
+        addArgs(name, 'production'),
+        addArgs(name, 'preview'),
       ]),
     );
     const byName = (name: string) => uploads.filter((request) => request.args[2] === name).map((request) => request.input);
@@ -75,7 +82,7 @@ describe('luzia init: production variables', () => {
     });
 
     const uploads = run.commands.filter((command) => command.startsWith('vercel env'));
-    expect(uploads).toEqual(LUZIA_VARIABLES.map((name) => `vercel env add ${name} production`));
+    expect(uploads).toEqual(LUZIA_VARIABLES.map((name) => addLine(name, 'production')));
   });
 
   it('asks before replacing variables that already exist on Vercel, and replaces them with --force on yes', async () => {
@@ -92,7 +99,7 @@ describe('luzia init: production variables', () => {
     });
 
     expect(run.code).toBe(0);
-    expect(run.commands).toContain('vercel env add OPENAI_API_KEY production --force');
+    expect(run.commands).toContain(`${addLine('OPENAI_API_KEY', 'production')} --force`);
     const forced = run.requests.find((request) => request.args.includes('--force'))!;
     expect(forced.input).toBe(OWNER_KEYS.openai);
     expect(run.stdout).not.toMatch(/Still to do/);
@@ -126,9 +133,9 @@ describe('luzia init: production variables', () => {
       runner,
     });
 
-    expect(run.stderr).toMatch(/vercel env add ANTHROPIC_API_KEY production failed/);
+    expect(run.stderr).toMatch(/vercel env add ANTHROPIC_API_KEY --environment production .*failed/);
     expect(run.stdout).toMatch(/Still to do:[\s\S]*Add ANTHROPIC_API_KEY to Vercel \(production\)/);
-    expect(run.commands).toContain('vercel env add OPENAI_API_KEY production');
+    expect(run.commands).toContain(addLine('OPENAI_API_KEY', 'production'));
     expect(run.output).not.toContain(OWNER_KEYS.anthropic);
   });
 

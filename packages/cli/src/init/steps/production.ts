@@ -102,9 +102,24 @@ async function uploadToVercel(context: WizardContext): Promise<void> {
   }
 }
 
-/** `vercel env add NAME ENVIRONMENT [--force]`, with the value on standard input. */
+/**
+ * `vercel env add NAME --environment ENV --yes [--sensitive] [--force]`, with the
+ * value on standard input (never in the arguments). `--yes` keeps it
+ * non-interactive (a Preview variable applies to every branch instead of
+ * prompting for one); API keys are stored as sensitive, luzIA's own settings
+ * stay readable.
+ */
 async function addVariable(context: WizardContext, name: string, environment: Environment, force: boolean): Promise<CommandResult> {
-  const args = ['env', 'add', name, environment, ...(force ? ['--force'] : [])];
+  const args = [
+    'env',
+    'add',
+    name,
+    '--environment',
+    environment,
+    '--yes',
+    ...(name.startsWith('LUZIA_') ? [] : ['--sensitive']),
+    ...(force ? ['--force'] : []),
+  ];
   const line = ['vercel', ...args].join(' ');
   context.say(`Running ${line}…`);
   const result = await context.io.runner.run({ command: 'vercel', args, cwd: context.cwd, input: context.state.envValues[name] });
@@ -113,14 +128,14 @@ async function addVariable(context: WizardContext, name: string, environment: En
 }
 
 function alreadyExists(result: CommandResult): boolean {
-  return /already exists/i.test(`${result.stderr}\n${result.stdout}`);
+  return /already (exists|been added)|already (a|an) .*variable/i.test(`${result.stderr}\n${result.stdout}`);
 }
 
 function reportFailure(context: WizardContext, name: string, environment: Environment, result: CommandResult): void {
-  context.warn(`vercel env add ${name} ${environment} failed (exit code ${result.exitCode}).`);
+  context.warn(`vercel env add ${name} --environment ${environment} failed (exit code ${result.exitCode}).`);
   const details = result.stderr.trim().split('\n').slice(-5).join('\n');
   if (details) context.warn(details);
-  context.changes.todo.push(`Add ${name} to Vercel (${environment}) with the value from ${ENV_FILE}: vercel env add ${name} ${environment}`);
+  context.changes.todo.push(`Add ${name} to Vercel (${environment}) with the value from ${ENV_FILE}: vercel env add ${name} --environment ${environment}`);
 }
 
 function printVariables(context: WizardContext): void {

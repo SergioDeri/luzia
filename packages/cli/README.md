@@ -99,7 +99,7 @@ Deploy the folder as its own Vercel project (framework preset: Other).
 
 **8. Production variables.** The server needs the same variables in production as in `.env.local`.
 
-- **Linked to Vercel** (the folder has `.vercel/`, from `vercel link`) **and the Vercel CLI installed**: the wizard lists the variable names (never the values), asks which environments should get them (Production and Preview, or Production only), and after one confirmation runs `vercel env add` for each variable. Values are passed on the command's standard input, never in its arguments and never printed. Variables that already exist on Vercel are listed, and replaced only if you say so.
+- **Linked to Vercel** (the folder has `.vercel/`, from `vercel link`) **and the Vercel CLI installed**: the wizard lists the variable names (never the values), asks which environments should get them (Production and Preview, or Production only), and after one confirmation runs `vercel env add NAME --environment ENV --yes` for each variable and environment (API keys with `--sensitive`, so Vercel stores them as secrets; Preview variables apply to every branch). Values are passed on the command's standard input, never in its arguments and never printed. Variables that already exist on Vercel are listed, and replaced only if you say so.
 - **Otherwise**: the wizard prints the variable names to set in your hosting provider's settings, each with where its value comes from (`.env.local`), without the values. Link the project with `vercel link` and run `luzia init` again to upload them from the wizard.
 
 ### Running it again
