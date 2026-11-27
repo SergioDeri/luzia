@@ -1,0 +1,90 @@
+import { vi } from 'vitest';
+
+/** A request the widget made, as the server would receive it. */
+export interface RecordedRequest {
+  url: string;
+  method: string;
+  headers: Headers;
+  body: unknown;
+}
+
+/** The server side of one in-flight streamed reply, driven by the test. */
+export interface FakeReply {
+  /** Streams a piece of the Agent's reply text to the widget. */
+  push(text: string): Promise<void>;
+  /** Ends the streamed reply. */
+  end(): Promise<void>;
+}
+
+export interface FakeFetch {
+  requests: RecordedRequest[];
+  /** Resolves with the reply stream for the next request the widget makes. */
+  nextReply(): Promise<FakeReply>;
+  /** Makes the next request fail as a network error would. */
+  failNextWithNetworkError(): void;
+}
+
+/**
+ * Replaces the global `fetch` with a fake luzIA server whose replies the test
+ * streams piece by piece, like the real handler's `text/plain` stream.
+ */
+export function installFakeFetch(): FakeFetch {
+  const requests: RecordedRequest[] = [];
+  const pendingReplies: Array<(reply: FakeReply) => void> = [];
+  const readyReplies: FakeReply[] = [];
+  let failNext = false;
+
+  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+    requests.push({
+      url: String(input),
+      method: init?.method ?? 'GET',
+      headers: new Headers(init?.headers),
+      body: typeof init?.body === 'string' ? JSON.parse(init.body) : init?.body,
+    });
+
+    if (failNext) {
+      failNext = false;
+      throw new TypeError('Failed to fetch');
+    }
+
+    const encoder = new TextEncoder();
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    const stream = new ReadableStream<Uint8Array>({
+      start(c) {
+        controller = c;
+      },
+    });
+    const reply: FakeReply = {
+      push: async (text) => {
+        controller.enqueue(encoder.encode(text));
+        await settle();
+      },
+      end: async () => {
+        controller.close();
+        await settle();
+      },
+    };
+    const waiting = pendingReplies.shift();
+    if (waiting) waiting(reply);
+    else readyReplies.push(reply);
+
+    return new Response(stream, { status: 200, headers: { 'content-type': 'text/plain; charset=utf-8' } });
+  });
+
+  return {
+    requests,
+    nextReply: async () => {
+      const ready = readyReplies.shift();
+      if (ready) return ready;
+      return new Promise<FakeReply>((resolve) => pendingReplies.push(resolve));
+    },
+    failNextWithNetworkError: () => {
+      failNext = true;
+    },
+  };
+}
+
+/** Lets pending stream reads and DOM updates run. */
+export async function settle(): Promise<void> {
+  for (let i = 0; i < 10; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+}
