@@ -44,7 +44,13 @@ async function runCase(evalCase: EvalCase, handler: LuziaHandler, judge: ChatMod
       body: JSON.stringify({ messages: [{ role: 'user', content: evalCase.question }] }),
     }),
   );
-  const answer = await response.text();
+  let answer: string;
+  try {
+    answer = await response.text();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { case: evalCase, passed: false, answer: message, reason: `The reply broke off mid-stream: ${message}` };
+  }
   if (!response.ok) {
     return { case: evalCase, passed: false, answer, reason: `The handler responded with HTTP ${response.status}.` };
   }

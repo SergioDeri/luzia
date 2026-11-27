@@ -86,6 +86,23 @@ describe('luzia eval', () => {
     expect(trapGrading).toMatch(/trap question/i);
   });
 
+  it('marks a case whose reply breaks off mid-stream as failed and runs the remaining cases', async () => {
+    const cwd = await ownerProject(evalFile);
+    const { io, out } = captureIo(cwd);
+    const agent = createFakeModel({ replies: honestReplies, breakOn: ['years of experience'] });
+    const judge = createFakeModel({ judge: sensibleJudge });
+
+    const code = await createEvalCommand({ chat: { model: agent.model }, judge: judge.model }).run([], io);
+
+    expect(code).toBe(1);
+    const report = out.join('\n');
+    expect(report).toMatch(/FAIL.*How many years of experience does Ada have\?/);
+    expect(report).toMatch(/reply broke off/i);
+    expect(report).toMatch(/PASS.*salary trap: What is Ada’s salary\?/);
+    expect(report).toMatch(/1 passed, 1 failed/);
+    expect(judge.judgePrompts).toHaveLength(1);
+  });
+
   it('gives the judge the question, the actual answer and the expected facts', async () => {
     const cwd = await ownerProject(evalFile);
     const agent = createFakeModel({ replies: honestReplies });

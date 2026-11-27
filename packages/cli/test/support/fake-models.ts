@@ -30,11 +30,14 @@ function lastUserText(prompt: Prompt): string {
 /**
  * A fake model that can play both parts of an eval run:
  * - as the Agent (streamed chat), it replies with the entry of `replies` whose
- *   key appears in the Visitor's latest message;
+ *   key appears in the Visitor's latest message; when the message contains one
+ *   of `breakOn`, the reply breaks off after its first piece, as a provider
+ *   failing mid-reply does;
  * - as the judge (structured output), it answers with `judge(gradingPrompt)` as JSON.
  */
 export function createFakeModel(options: {
   replies?: Record<string, string>;
+  breakOn?: string[];
   judge?: (prompt: string) => FakeVerdict;
 }) {
   const model = new MockLanguageModelV4({
@@ -42,6 +45,18 @@ export function createFakeModel(options: {
       const question = lastUserText(prompt);
       const reply =
         Object.entries(options.replies ?? {}).find(([key]) => question.includes(key))?.[1] ?? "I don't know.";
+      if (options.breakOn?.some((key) => question.includes(key))) {
+        return {
+          stream: simulateReadableStream({
+            chunks: [
+              { type: 'stream-start', warnings: [] },
+              { type: 'text-start', id: 'text-1' },
+              { type: 'text-delta', id: 'text-1', delta: reply.split(' ')[0] ?? '' },
+              { type: 'error', error: new Error('Provider dropped the stream') },
+            ],
+          }),
+        };
+      }
       return {
         stream: simulateReadableStream({
           chunks: [
