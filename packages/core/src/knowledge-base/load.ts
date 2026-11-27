@@ -18,5 +18,10 @@ export function loadCompiledKnowledgeBase(value: unknown): CompiledKnowledgeBase
         `format ${COMPILED_KNOWLEDGE_BASE_FORMAT}. Run \`luzia build\` again.`,
     );
   }
+  if (!Array.isArray(kb.chunks) || (kb.chunks.length > 0 && typeof kb.embeddingModel !== 'string')) {
+    throw new LuziaConfigError(
+      'The compiled Knowledge Base has invalid chunks or no embeddings model id. Run `luzia build` again.',
+    );
+  }
   return kb as CompiledKnowledgeBase;
 }

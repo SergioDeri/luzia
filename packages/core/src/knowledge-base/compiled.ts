@@ -19,6 +19,7 @@ export interface KnowledgeBaseChunk {
   source: string;
   /** Heading path the chunk lives under, outermost first. */
   headings: string[];
+  /** The chunk's content, prefixed with its heading path (e.g. `Experience > Northwind`). */
   text: string;
   vector: number[];
 }
@@ -29,8 +30,8 @@ export interface CompiledKnowledgeBase {
   core: KnowledgeBaseDocument;
   /** Owner's behavioural guidance. Not facts, and never part of retrieval. */
   instructions: KnowledgeBaseDocument | null;
-  /** Retrievable content. Empty until retrieval is configured. */
+  /** Retrievable content: every file other than Core and Instructions. Empty for a Core-only Knowledge Base. */
   chunks: KnowledgeBaseChunk[];
-  /** Id of the embeddings model the chunk vectors were made with, if any. */
+  /** Id (`<provider>:<model>`) of the embeddings model the chunk vectors were made with; null when there are no chunks. */
   embeddingModel: string | null;
 }
