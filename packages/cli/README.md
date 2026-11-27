@@ -102,13 +102,15 @@ Deploy the folder as its own Vercel project (framework preset: Other).
 
 ### Running it again
 
-On a project that is already set up, `luzia init` doesn't start over. It shows what is configured (the Core with your name and contact, the Instructions, other Knowledge Base files, the chat and embeddings models, the API key names with their values hidden, and, for Next.js, the route and the widget), then a menu of sections to change:
+On a project that is already set up, `luzia init` doesn't start over. It shows what is configured (the Core with your name and contact, the Instructions, other Knowledge Base files, the chat and embeddings models, the API key names with their values hidden, the route and the widget on Next.js, or the server and its allowed origins on a standalone setup), then a menu of sections to change:
 
 - Models and keys
 - Core
 - Instructions
-- Widget
+- Widget (on a standalone setup, the updated `<script>` snippet is printed again)
+- Allowed origins of the server (standalone setups only; edits just the `allowedOrigins` list after a diff)
 - Production variables
+- Set up the integration (only when a Core exists but the route or server is missing)
 
 Pick one section, change it, and pick another or finish. Everything else is left as it is. Your current settings are offered as the defaults, so you only change what you want to. Replacing an existing file (such as your Core) always shows a diff and asks first. If the setup is incomplete, for example the integration into your project was never finished, the menu also offers to complete it.
 
