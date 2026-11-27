@@ -332,26 +332,31 @@ All are read on the server only. `luzia build` and `luzia eval` read them too, a
 | `LUZIA_MAX_MESSAGES` | `20` | server | Maximum Visitor messages per conversation |
 | `LUZIA_MAX_MESSAGE_LENGTH` | `1000` | server | Maximum characters per Visitor message |
 | `LUZIA_MAX_OUTPUT_TOKENS` | `600` | server | Maximum tokens per Agent reply |
+| `LUZIA_MAX_REPLY_LENGTH` | 8 × max output tokens (`4800`) | server | Maximum characters per Agent reply sent back in the conversation |
+| `LUZIA_MAX_REQUEST_BYTES` | `524288` (512 KiB) | server | Maximum request body size |
 
 Values passed in code to `createLuziaHandler` take precedence over the environment.
 
 ## Limits
 
-Each conversation is bounded so one Visitor can't run up an unbounded bill. The defaults are safe; override them per setting.
+Each conversation and each request is bounded so one Visitor can't run up an unbounded bill. The defaults are safe; override them per setting.
 
 | Limit | Default | Option | Variable | When exceeded |
 | --- | --- | --- | --- | --- |
 | Visitor messages per conversation | 20 | `limits.maxMessages` | `LUZIA_MAX_MESSAGES` | `429` `conversation_limit_reached` |
 | Characters per Visitor message | 1000 | `limits.maxMessageLength` | `LUZIA_MAX_MESSAGE_LENGTH` | `413` `message_too_long` |
 | Tokens per Agent reply | 600 | `limits.maxOutputTokens` | `LUZIA_MAX_OUTPUT_TOKENS` | the reply is cut at the limit |
+| Characters per Agent reply sent back | 8 × `maxOutputTokens` (4800) | `limits.maxReplyLength` | `LUZIA_MAX_REPLY_LENGTH` | `413` `message_too_long` |
+| Messages per conversation, both roles | 2 × `maxMessages` − 1 (39) | follows `maxMessages` | | `429` `conversation_limit_reached` |
+| Request body size | 512 KiB | `limits.maxRequestBytes` | `LUZIA_MAX_REQUEST_BYTES` | `413` `request_too_large` |
 
 ```ts
 createLuziaHandler({ knowledgeBase, limits: { maxMessages: 30, maxOutputTokens: 800 } });
 ```
 
-Only Visitor messages count towards `maxMessages` (Agent replies don't). Values must be positive whole numbers, or the server fails at startup. When a limit is hit, the widget tells the Visitor and shows the Owner's `contact`; it does the same when the Agent is unavailable (network or provider error). The Agent also refuses off-topic requests (such as "write me a Python script"), so your portfolio isn't a free general-purpose chatbot.
+Only Visitor messages count towards `maxMessages`; the conversation as a whole may hold at most `2 × maxMessages − 1` messages, the most an alternating conversation can have. The server is stateless, so earlier Agent replies arrive from the client with every request and could be forged: each one is capped at `maxReplyLength` characters, which by default follows `maxOutputTokens` (8 characters per token, well above what a reply of that many tokens holds). The body size is checked while the request is read, before it is parsed as JSON; if you raise the other limits a lot, raise `maxRequestBytes` too. Values must be positive whole numbers, or the server fails at startup. When a limit is hit, the widget tells the Visitor and shows the Owner's `contact`; it does the same when the Agent is unavailable (network or provider error). The Agent also refuses off-topic requests (such as "write me a Python script"), so your portfolio isn't a free general-purpose chatbot.
 
-Error responses are JSON: `{ "error": { "code": "...", "message": "..." } }`.
+Error responses are JSON: `{ "error": { "code": "...", "message": "..." } }`. Besides the limit codes above: `400` `invalid_request`, `403` `origin_not_allowed`, `405` `method_not_allowed`, and `502` `provider_error` when the chat model fails before replying or the embeddings model fails while searching the Knowledge Base (a chat model failing mid-reply breaks the stream instead).
 
 ## Allowed origins
 
@@ -366,6 +371,8 @@ createLuziaHandler({ knowledgeBase, allowedOrigins: ['https://jamie.example.com'
 ```
 
 Origin checks stop other websites from using your server through Visitors' browsers. They are not authentication: a script outside a browser can send any `Origin`. The limits are what bound the cost of each request.
+
+**What this does not stop.** Origin checks and per-conversation limits keep other websites from embedding your widget and bound what each request can cost, but they do not stop scripted abuse: requests without an `Origin` header are accepted, and a script can simply start a new conversation every time it hits a limit. Set a spend limit (and usage alerts) with your chat and embeddings providers so a determined caller can't run up an unbounded bill. Per-IP rate limiting is planned.
 
 ## Widget
 
@@ -488,7 +495,7 @@ FAIL  3. trap: Kubernetes: Has Jamie worked with Kubernetes in production?
 2 passed, 1 failed (3 cases)
 ```
 
-`luzia eval` exits non-zero when any case fails, so you can gate deploys on it. Re-run it after changing your Knowledge Base, Instructions, model or retrieval settings. It calls your real model, so it costs tokens.
+`luzia eval` exits non-zero when any case fails, so you can gate deploys on it. A case whose reply errors or breaks off mid-stream is reported as failed with the error, and the run continues. Re-run it after changing your Knowledge Base, Instructions, model or retrieval settings. It calls your real model, so it costs tokens.
 
 ## Handler options
 
@@ -500,7 +507,7 @@ FAIL  3. trap: Kubernetes: Has Jamie worked with Kubernetes in production?
 | `chat` | `{ provider, model, apiKey? }` or `{ model: <AI SDK language model> }`. Default: from `LUZIA_CHAT_*` |
 | `embedding` | `{ provider, model, apiKey? }` or `{ model: <AI SDK embedding model> }`. Default: from `LUZIA_EMBEDDING_*` |
 | `allowedOrigins` | Origins allowed from other sites. Default: from `LUZIA_ALLOWED_ORIGINS` |
-| `limits` | `{ maxMessages?, maxMessageLength?, maxOutputTokens? }`. Default: from the environment, else 20 / 1000 / 600 |
+| `limits` | `{ maxMessages?, maxMessageLength?, maxOutputTokens?, maxReplyLength?, maxRequestBytes? }`. Default: from the environment, else 20 / 1000 / 600 / 8 × `maxOutputTokens` / 512 KiB (see [Limits](#limits)) |
 | `retrieval` | `{ topK?, vectorStore? }`. `topK` defaults to 4. `vectorStore` replaces the in-memory store (an object with `search(queryVector, k)`) |
 | `env` | Where settings and keys are read from. Default: `process.env` |
 
