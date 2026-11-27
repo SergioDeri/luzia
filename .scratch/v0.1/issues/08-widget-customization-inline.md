@@ -4,11 +4,11 @@
 
 **Blocked by:** 02 — Minimal widget: floating bubble with streamed replies
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Greeting is shown when the chat opens
-- [ ] Suggested questions render as clickable options; clicking one sends it as a message
-- [ ] Theme is controllable via CSS custom properties, with light and dark modes
-- [ ] Inline mode renders the chat inside a host element with no bubble
-- [ ] Every option is configurable both as a Web Component attribute and a React prop
-- [ ] Seam 2 tests cover each option
+- [x] Greeting is shown when the chat opens
+- [x] Suggested questions render as clickable options; clicking one sends it as a message
+- [x] Theme is controllable via CSS custom properties, with light and dark modes
+- [x] Inline mode renders the chat inside a host element with no bubble
+- [x] Every option is configurable both as a Web Component attribute and a React prop
+- [x] Seam 2 tests cover each option
