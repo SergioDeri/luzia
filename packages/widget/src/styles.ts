@@ -326,18 +326,22 @@ export const styles = `
   }
   .composer button:disabled { opacity: 0.5; cursor: default; }
   @media (max-width: 480px) {
+    /* The whole visible screen: above the on-screen keyboard when it is open (set by the element from visualViewport). */
     .panel {
       position: fixed;
-      top: 0;
+      top: var(--luzia-viewport-top, 0px);
       left: 0;
       width: 100vw;
-      height: 100vh;
+      height: var(--luzia-viewport-height, 100vh);
       margin: 0;
       border-radius: 0;
     }
     @supports (height: 100dvh) {
-      .panel { height: 100dvh; }
+      .panel { height: var(--luzia-viewport-height, 100dvh); }
     }
+    /* With the keyboard open there is little room: a smaller picture keeps the speech bubble and the last messages in view. */
+    :host([data-keyboard]) .avatar { height: min(var(--luzia-avatar-size, 6rem), 6rem); }
+    :host([data-keyboard]) .speech-text { max-height: 4.5rem; }
     /* Inline, the chat stays in the page but never taller than the screen. */
     :host([mode='inline']) .panel { height: min(var(--luzia-inline-height), 85vh); }
     .composer { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }

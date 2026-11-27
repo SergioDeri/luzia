@@ -51,6 +51,14 @@ export type LuziaWidgetTheme = 'light' | 'dark' | 'auto';
 const BaseElement: typeof HTMLElement =
   typeof HTMLElement === 'undefined' ? (class {} as unknown as typeof HTMLElement) : HTMLElement;
 
+/** luzIA's own introduction, in the page's language (Spanish or English), for Owners who set no greeting. */
+function defaultGreeting(): string {
+  const language = (document.documentElement.lang || navigator.language || 'en').toLowerCase();
+  return language.startsWith('es')
+    ? '¡Hola! Soy luzIA, una IA que responde preguntas sobre la persona de este portfolio: su experiencia, sus proyectos y lo que busca. ¿Qué te gustaría saber?'
+    : 'Hi! I’m luzIA, an AI agent that answers questions about the person behind this portfolio: their experience, their projects and what they’re looking for. What would you like to know?';
+}
+
 /** How long the speech bubble stays after the mouse leaves it. */
 const SPEECH_AFTER_HOVER_MS = 2_000;
 
@@ -119,8 +127,9 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     this.setAttribute('contact', value);
   }
 
+  /** The Owner's greeting; without the attribute, luzIA introduces itself. An empty `greeting=""` turns it off. */
   get greeting(): string {
-    return this.getAttribute('greeting') ?? '';
+    return this.getAttribute('greeting') ?? defaultGreeting();
   }
 
   set greeting(value: string) {
@@ -206,8 +215,17 @@ class View {
   readonly #stage: HTMLElement;
   readonly #speech: HTMLElement;
   readonly #speechText: HTMLElement;
-  /** The reply luzIA is "saying" in the speech bubble (index in the conversation), kept out of the history until it ends. */
-  #speaking: number | null = null;
+  /**
+   * What luzIA is "saying" in the speech bubble, kept out of the history until
+   * it ends: a reply (its index in the conversation) or the greeting.
+   */
+  #speaking: number | 'greeting' | null = null;
+  #greetingText = '';
+  readonly #host: HTMLElement;
+  /** Stops following the visible area of the screen (see {@link View.#followViewport}). */
+  #unfollowViewport: (() => void) | null = null;
+  /** luzIA greets once per conversation: when the chat first shows, and again after "New conversation". */
+  #greeted = false;
   #speechTimer: ReturnType<typeof setTimeout> | undefined;
   /** While the mouse is over the bubble, it stays (the Visitor may be reading or scrolling it). */
   #speechHovered = false;
@@ -227,6 +245,7 @@ class View {
 
   constructor(root: ShadowRoot, conversation: Conversation, contact: () => string) {
     this.#conversation = conversation;
+    this.#host = root.host as HTMLElement;
     this.#contact = contact;
     this.#bubble = root.querySelector('.bubble')!;
     this.#panel = root.querySelector('.panel')!;
@@ -266,6 +285,8 @@ class View {
     });
     root.querySelector('.new-conversation')!.addEventListener('click', () => {
       conversation.reset();
+      this.#greeted = false;
+      this.#greet();
       this.#input.focus();
     });
     this.#form.addEventListener('submit', (event) => {
@@ -287,9 +308,8 @@ class View {
   configure(options: ViewOptions): void {
     this.#showAvatar(options.avatar.trim());
 
-    const greeting = options.greeting.trim();
-    this.#greeting.textContent = greeting;
-    this.#greeting.hidden = !greeting;
+    this.#greetingText = options.greeting.trim();
+    this.#greeting.textContent = this.#greetingText;
 
     this.#suggestions.replaceChildren(
       ...options.suggestedQuestions.map((question) => {
@@ -333,6 +353,54 @@ class View {
   #setOpen(open: boolean): void {
     this.#panel.hidden = !open;
     this.#bubble.setAttribute('aria-expanded', String(open));
+    if (open) this.#greet();
+    this.#unfollowViewport?.();
+    this.#unfollowViewport = open ? this.#followViewport() : null;
+  }
+
+  /**
+   * On a phone the chat fills the screen, but an on-screen keyboard covers its
+   * lower part and the browser scrolls the page under it, pushing luzIA's
+   * picture and speech bubble out of view. While the chat is open it follows
+   * the part of the screen that is actually visible (`visualViewport`), and
+   * marks the host with `data-keyboard` so the picture gets smaller.
+   */
+  #followViewport(): (() => void) | null {
+    const viewport = window.visualViewport;
+    if (!viewport) return null;
+    const fit = () => {
+      const phone = this.#mode === 'bubble' && window.matchMedia('(max-width: 480px)').matches;
+      if (!phone) return this.#clearViewport();
+      this.#host.style.setProperty('--luzia-viewport-height', `${viewport.height}px`);
+      this.#host.style.setProperty('--luzia-viewport-top', `${viewport.offsetTop}px`);
+      // A keyboard takes a good part of the screen; browser bars alone don't.
+      this.#host.toggleAttribute('data-keyboard', viewport.height < window.innerHeight * 0.75);
+    };
+    fit();
+    viewport.addEventListener('resize', fit);
+    viewport.addEventListener('scroll', fit);
+    return () => {
+      viewport.removeEventListener('resize', fit);
+      viewport.removeEventListener('scroll', fit);
+      this.#clearViewport();
+    };
+  }
+
+  #clearViewport(): void {
+    this.#host.style.removeProperty('--luzia-viewport-height');
+    this.#host.style.removeProperty('--luzia-viewport-top');
+    this.#host.removeAttribute('data-keyboard');
+  }
+
+  /** luzIA says the greeting in the bubble when a conversation starts empty (never over a restored one). */
+  #greet(): void {
+    if (this.#greeted || this.#panel.hidden) return;
+    this.#greeted = true;
+    if (!this.#greetingText || this.#conversation.state.messages.length > 0) return;
+    this.#stopSpeaking();
+    this.#speaking = 'greeting';
+    this.#showSpeech(this.#greetingText);
+    this.#render(this.#conversation.state);
   }
 
   /** The Owner's image at the top of the chat, or luzIA's icon. Decorative: the title already says "luzIA". */
@@ -388,18 +456,21 @@ class View {
       clearTimeout(this.#speechTimer);
       this.#showSpeech(state.messages[last]!.content);
     } else if (this.#speaking !== null) {
-      const stillThisReply = this.#speaking === last && state.status === 'idle';
-      if (!stillThisReply) this.#stopSpeaking();
+      const greeting = this.#speaking === 'greeting';
+      // The greeting stays until the Visitor says something; a reply until another one starts.
+      const stillSaying = greeting ? state.messages.length === 0 : this.#speaking === last && state.status === 'idle';
+      if (!stillSaying) this.#stopSpeaking();
       else if (this.#speechTimer === undefined && !this.#speechHovered) {
-        const text = state.messages[last]!.content;
+        const text = greeting ? this.#greetingText : state.messages[last]!.content;
         const delay = this.#speechVisited ? SPEECH_AFTER_HOVER_MS : Math.min(10_000, 4_000 + text.length * 40);
         this.#speechTimer = setTimeout(() => this.#fadeSpeech(), delay);
       }
     }
-    // The reply being said stays out of the history until the bubble is gone.
+    // What is being said stays out of the history until the bubble is gone.
     [...this.#messages.children].forEach((item, index) => {
       (item as HTMLElement).hidden = index === this.#speaking;
     });
+    this.#greeting.hidden = !this.#greetingText || this.#speaking === 'greeting';
   }
 
   #showSpeech(text: string): void {

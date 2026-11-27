@@ -142,19 +142,22 @@ describe('greeting', () => {
     const widget = mountWidget({ endpoint: '/api/luzia', greeting: 'Hi! Ask me anything about Jamie.' });
     await widget.click('luzIA chat');
 
-    expect(widget.greeting()).toBe('Hi! Ask me anything about Jamie.');
+    // luzIA says it first, in the speech bubble…
+    expect(widget.speechBubble()).toBe('Hi! Ask me anything about Jamie.');
 
     widget.type('Is Jamie available?');
     await widget.click('Send');
     expect(server.requests[0]?.body).toEqual({ messages: [{ role: 'user', content: 'Is Jamie available?' }] });
+    // …and once the Visitor asks something it stays in the history.
     expect(widget.greeting()).toBe('Hi! Ask me anything about Jamie.');
   });
 
-  it('shows no greeting when none is configured', async () => {
-    const widget = mountWidget();
+  it('shows no greeting when the Owner turns it off', async () => {
+    const widget = mountWidget({ endpoint: '/api/luzia', greeting: '' });
     await widget.click('luzIA chat');
 
     expect(widget.greeting()).toBeNull();
+    expect(widget.speechBubble()).toBeNull();
   });
 });
 
@@ -215,7 +218,7 @@ describe('inline mode', () => {
     expect(widget.isChatOpen()).toBe(true);
     expect(widget.chatTitle()).toBe('luzIA');
     expect(widget.chatLabel()).toBe('luzIA');
-    expect(widget.greeting()).toBe('Ask me about Jamie.');
+    expect(widget.speechBubble()).toBe('Ask me about Jamie.');
     expect(widget.hasButton('luzIA chat')).toBe(false);
     expect(widget.hasButton('Close luzIA chat')).toBe(false);
     expect(getComputedStyle(widget.host).position).not.toBe('fixed');

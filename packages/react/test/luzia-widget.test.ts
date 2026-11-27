@@ -91,7 +91,7 @@ describe('<LuziaWidget>', () => {
     });
     await widget.click('luzIA chat');
 
-    expect(widget.greeting()).toBe('Hi! Ask me anything about Jamie.');
+    expect(widget.speechBubble()).toBe('Hi! Ask me anything about Jamie.');
     expect(widget.suggestedQuestions()).toEqual(['What role is Jamie looking for?', 'Is Jamie open to remote work?']);
 
     await widget.click('Is Jamie open to remote work?');

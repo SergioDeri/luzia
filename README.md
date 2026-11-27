@@ -426,11 +426,13 @@ Origin checks stop other websites from using your server through Visitors' brows
 | --- | --- | --- | --- |
 | `endpoint` | `endpoint` | (required) | URL of the luzIA handler, e.g. `/api/luzia` or `https://luzia-server.vercel.app/api/luzia` |
 | `contact` | `contact` | (none) | How to reach the Owner (email, URL or short text), shown when a limit is hit or the Agent is unavailable |
-| `greeting` | `greeting` | (none) | First message the Visitor sees. Display only, never sent to the server |
+| `greeting` | `greeting` | luzIA introduces itself, in the page's language (Spanish or English) | What luzIA says first, in its speech bubble, when a conversation starts (the chat opens, or "New conversation"); then it stays at the top of the conversation. Display only, never sent to the server. `greeting=""` turns it off |
 | `suggested-questions` | `suggestedQuestions` | (none) | Questions the Visitor can click to send, shown until the conversation starts. Attribute: a JSON array of strings; prop: an array |
 | `mode` | `mode` | `bubble` | `bubble` (floating button that opens the chat) or `inline` (the chat rendered in place, always open, for a section such as "Ask luzIA about me") |
 | `theme` | `theme` | `light` | `light`, `dark`, or `auto` to follow the Visitor's `prefers-color-scheme` |
 | `avatar` | `avatar` | luzIA's icon | URL of an image shown large and centred at the top of the chat, like a video call, with the conversation below it (your photo, a logo…). It is shown whole, in its own shape (a PNG with a transparent background works best), and glows softly while luzIA is replying. Each reply appears in a speech bubble beside the picture as it streams in (luzIA stays on the left, so it never moves her), stays a few seconds after it ends (and for as long as the mouse is over it, going 2 seconds after the mouse leaves), then fades and joins the conversation below. A new reply moves the current one to the conversation at once. Long replies show from their beginning and scroll inside the bubble. Without one, luzIA's own icon is shown, in the theme's accent colours. Its height can be set with `--luzia-avatar-size` |
+
+On a phone, the bubble's chat fills the screen. When the on-screen keyboard opens, the chat fits the part of the screen still visible above it and luzIA's picture gets smaller, so its speech bubble and the latest messages stay in view.
 
 ```html
 <section id="ask">
