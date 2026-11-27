@@ -18,7 +18,9 @@ export function visitor(host: Element) {
     return match;
   };
 
-  const chat = (): HTMLElement | null => root().querySelector<HTMLElement>('[role="dialog"]');
+  /** The chat: a dialog in bubble mode, a region in inline mode. */
+  const chat = (): HTMLElement | null =>
+    root().querySelector<HTMLElement>('[role="dialog"], [role="region"][aria-label="luzIA"]');
 
   const messageBox = (): HTMLTextAreaElement => {
     const box = root().querySelector<HTMLTextAreaElement>('textarea[aria-label="Message luzIA"]');
@@ -27,7 +29,18 @@ export function visitor(host: Element) {
   };
 
   return {
+    host,
     button,
+    /** Whether a button with this name is on screen. */
+    hasButton: (name: string) => {
+      const match = [...root().querySelectorAll('button')].find(
+        (b) => (b.getAttribute('aria-label') ?? b.textContent?.trim()) === name,
+      );
+      for (let el: Element | null = match ?? null; el; el = el.parentElement) {
+        if ((el as HTMLElement).hidden || getComputedStyle(el).display === 'none') return false;
+      }
+      return match !== undefined;
+    },
     /** Whether the chat panel is on screen. */
     isChatOpen: () => {
       const panel = chat();
@@ -56,5 +69,23 @@ export function visitor(host: Element) {
         text: el.textContent ?? '',
       })),
     alert: () => root().querySelector('[role="alert"]')?.textContent?.trim() ?? null,
+    /** The greeting shown in the open chat, or `null` when there is none. */
+    greeting: () => {
+      const greeting = chat()?.querySelector<HTMLElement>('.greeting');
+      return greeting && !greeting.hidden ? (greeting.textContent?.trim() ?? '') : null;
+    },
+    /** The chat's background and text colours, as computed. */
+    chatColors: () => {
+      const panel = chat();
+      if (!panel) throw new Error('No chat panel.');
+      const style = getComputedStyle(panel);
+      return { surface: style.backgroundColor, text: style.color };
+    },
+    /** The suggested questions the Visitor can click right now. */
+    suggestedQuestions: () => {
+      const list = chat()?.querySelector<HTMLElement>('[aria-label="Suggested questions"]');
+      if (!list || list.hidden) return [];
+      return [...list.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
+    },
   };
 }

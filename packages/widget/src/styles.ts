@@ -1,4 +1,15 @@
-/** Shadow DOM styles. Theme tokens are CSS custom properties hosts can override. */
+/**
+ * Shadow DOM styles. Theme tokens are CSS custom properties the Owner can
+ * override on the element (`luzia-widget { --luzia-accent: #e11d48; }`); an
+ * Owner's value wins over both the light and the dark palette.
+ *
+ * - `--luzia-accent` / `--luzia-accent-contrast`: bubble, header, Visitor messages, buttons, and text on them
+ * - `--luzia-surface` / `--luzia-text`: chat background and text
+ * - `--luzia-muted`: Agent messages, greeting and suggested questions
+ * - `--luzia-border`: input and inline-panel borders
+ * - `--luzia-font`: font family
+ * - `--luzia-inline-height`: height of the chat in inline mode
+ */
 export const styles = `
   :host {
     --luzia-accent: #4f46e5;
@@ -7,12 +18,28 @@ export const styles = `
     --luzia-text: #18181b;
     --luzia-muted: #f4f4f5;
     --luzia-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --luzia-border: #d4d4d8;
+    --luzia-inline-height: 32rem;
     position: fixed;
     right: 1.25rem;
     bottom: 1.25rem;
     z-index: 2147483000;
     font-family: var(--luzia-font);
     color: var(--luzia-text);
+  }
+  :host([theme='dark']) {
+    --luzia-surface: #18181b;
+    --luzia-text: #f4f4f5;
+    --luzia-muted: #27272a;
+    --luzia-border: #3f3f46;
+  }
+  @media (prefers-color-scheme: dark) {
+    :host([theme='auto']) {
+      --luzia-surface: #18181b;
+      --luzia-text: #f4f4f5;
+      --luzia-muted: #27272a;
+      --luzia-border: #3f3f46;
+    }
   }
   [hidden] { display: none !important; }
   .bubble {
@@ -40,6 +67,18 @@ export const styles = `
     box-shadow: 0 12px 40px rgb(0 0 0 / 0.2);
     overflow: hidden;
   }
+  :host([mode='inline']) {
+    position: static;
+    display: block;
+    z-index: auto;
+  }
+  :host([mode='inline']) .panel {
+    width: 100%;
+    height: var(--luzia-inline-height);
+    margin: 0;
+    border: 1px solid var(--luzia-border);
+    box-shadow: none;
+  }
   .header {
     display: flex;
     align-items: center;
@@ -57,12 +96,29 @@ export const styles = `
     line-height: 1;
     cursor: pointer;
   }
-  .messages {
+  .body {
     flex: 1;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 1rem;
-    list-style: none;
     overflow-y: auto;
+  }
+  .greeting {
+    align-self: flex-start;
+    max-width: 85%;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background: var(--luzia-muted);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+  .messages {
+    margin: 0;
+    padding: 0;
+    list-style: none;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -84,6 +140,26 @@ export const styles = `
     align-self: flex-start;
     background: var(--luzia-muted);
   }
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin: auto 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .suggestion {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--luzia-accent);
+    border-radius: 999px;
+    background: var(--luzia-surface);
+    color: var(--luzia-text);
+    font: 0.875rem var(--luzia-font);
+    text-align: left;
+    cursor: pointer;
+  }
+  .suggestion:hover { background: var(--luzia-muted); }
   .alert {
     margin: 0 1rem 0.5rem;
     font-size: 0.875rem;
@@ -99,8 +175,10 @@ export const styles = `
     flex: 1;
     resize: none;
     padding: 0.5rem;
-    border: 1px solid #d4d4d8;
+    border: 1px solid var(--luzia-border);
     border-radius: 0.5rem;
+    background: var(--luzia-surface);
+    color: var(--luzia-text);
     font: inherit;
   }
   .composer button {

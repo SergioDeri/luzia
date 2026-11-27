@@ -6,11 +6,17 @@
  * `{ messages: [{ role, content }] }` as JSON and read the reply as a streamed
  * `text/plain` body. Non-2xx responses carry `{ error: { code, message } }`.
  */
-import { LUZIA_WIDGET_TAG, LuziaWidgetElement, type LuziaWidgetConfig } from './element.ts';
+import {
+  LUZIA_WIDGET_TAG,
+  LuziaWidgetElement,
+  type LuziaWidgetConfig,
+  type LuziaWidgetMode,
+  type LuziaWidgetTheme,
+} from './element.ts';
 export { Conversation, type ConversationState, type ConversationStatus } from './conversation.ts';
 export { LuziaRequestError, type ChatMessage } from './chat-client.ts';
 
-export { LUZIA_WIDGET_TAG, LuziaWidgetElement, type LuziaWidgetConfig };
+export { LUZIA_WIDGET_TAG, LuziaWidgetElement, type LuziaWidgetConfig, type LuziaWidgetMode, type LuziaWidgetTheme };
 
 /** Registers `<luzia-widget>`. Safe to call more than once. */
 export function defineLuziaWidget(): void {

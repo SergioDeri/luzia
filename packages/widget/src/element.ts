@@ -11,7 +11,29 @@ export const LUZIA_WIDGET_TAG = 'luzia-widget';
 export interface LuziaWidgetConfig {
   /** URL of the luzIA server handler, e.g. `/api/luzia`. */
   endpoint: string;
+  /** First thing the Visitor sees in the chat. Display only: never sent to the server. */
+  greeting?: string;
+  /**
+   * Questions the Visitor can click to send, shown until the conversation
+   * starts. As an attribute: a JSON array of strings, e.g.
+   * `suggested-questions='["What role is she looking for?", "Is she open to remote work?"]'`.
+   */
+  suggestedQuestions?: readonly string[];
+  /**
+   * `bubble` (default): a floating button in the corner that opens the chat.
+   * `inline`: the chat is rendered inside the element itself, always open,
+   * so it can live in a page section.
+   */
+  mode?: LuziaWidgetMode;
+  /**
+   * `light` (default), `dark`, or `auto` to follow the Visitor's
+   * `prefers-color-scheme`. Colours are CSS custom properties (see styles.ts).
+   */
+  theme?: LuziaWidgetTheme;
 }
+
+export type LuziaWidgetMode = 'bubble' | 'inline';
+export type LuziaWidgetTheme = 'light' | 'dark' | 'auto';
 
 // Lets this module be imported during server-side rendering, where there is no DOM.
 const BaseElement: typeof HTMLElement =
@@ -23,7 +45,11 @@ const TEMPLATE = `
       <h2 class="title">luzIA</h2>
       <button type="button" class="close" aria-label="Close luzIA chat">&times;</button>
     </header>
-    <ol class="messages" role="log" aria-live="polite"></ol>
+    <div class="body">
+      <p class="greeting" hidden></p>
+      <ol class="messages" role="log" aria-live="polite"></ol>
+      <ul class="suggestions" aria-label="Suggested questions" hidden></ul>
+    </div>
     <p class="alert" role="alert" hidden></p>
     <form class="composer">
       <textarea name="message" rows="2" aria-label="Message luzIA" placeholder="Ask a question…"></textarea>
@@ -37,7 +63,10 @@ const TEMPLATE = `
 
 /**
  * `<luzia-widget endpoint="/api/luzia">`: a floating bubble that opens a chat
- * panel where the Visitor talks to the Agent.
+ * panel where the Visitor talks to the Agent, or with `mode="inline"` the chat
+ * itself, embedded where the element sits. Attributes: `endpoint`, `greeting`,
+ * `suggested-questions` (JSON array of strings), `mode`, `theme`. Each is also
+ * a property (`suggestedQuestions` takes an array).
  *
  * State lives in a {@link Conversation}; this element only renders its
  * snapshots and forwards Visitor input to it.
@@ -54,37 +83,105 @@ export class LuziaWidgetElement extends BaseElement implements LuziaWidgetConfig
     this.setAttribute('endpoint', value);
   }
 
+  get greeting(): string {
+    return this.getAttribute('greeting') ?? '';
+  }
+
+  set greeting(value: string) {
+    this.setAttribute('greeting', value);
+  }
+
+  get suggestedQuestions(): string[] {
+    return parseQuestions(this.getAttribute('suggested-questions'));
+  }
+
+  set suggestedQuestions(value: readonly string[]) {
+    this.setAttribute('suggested-questions', JSON.stringify(value));
+  }
+
+  get mode(): LuziaWidgetMode {
+    return this.getAttribute('mode') === 'inline' ? 'inline' : 'bubble';
+  }
+
+  set mode(value: LuziaWidgetMode) {
+    this.setAttribute('mode', value);
+  }
+
+  // Styles key off the attribute itself, so the theme needs no view work.
+  get theme(): LuziaWidgetTheme {
+    const theme = this.getAttribute('theme');
+    return theme === 'dark' || theme === 'auto' ? theme : 'light';
+  }
+
+  set theme(value: LuziaWidgetTheme) {
+    this.setAttribute('theme', value);
+  }
+
+  static get observedAttributes(): string[] {
+    return ['greeting', 'suggested-questions', 'mode'];
+  }
+
   connectedCallback(): void {
     if (this.#view) return;
     const root = this.attachShadow({ mode: 'open' });
     root.innerHTML = `<style>${styles}</style>${TEMPLATE}`;
     this.#view = new View(root, this.conversation);
+    this.#view.configure(this);
+  }
+
+  attributeChangedCallback(): void {
+    this.#view?.configure(this);
   }
 }
+
+/** Reads the `suggested-questions` attribute: a JSON array of strings. Anything else yields none. */
+function parseQuestions(value: string | null): string[] {
+  if (!value) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean);
+}
+
+/** The options the view renders, read from the element's attributes. */
+type ViewOptions = Required<Omit<LuziaWidgetConfig, 'endpoint' | 'theme'>>;
 
 /** The widget's DOM: wires Visitor input to the conversation and renders its state. */
 class View {
   readonly #bubble: HTMLButtonElement;
   readonly #panel: HTMLElement;
+  readonly #close: HTMLButtonElement;
+  readonly #body: HTMLElement;
+  readonly #greeting: HTMLElement;
   readonly #messages: HTMLOListElement;
+  readonly #suggestions: HTMLUListElement;
   readonly #alert: HTMLElement;
   readonly #form: HTMLFormElement;
   readonly #input: HTMLTextAreaElement;
   readonly #send: HTMLButtonElement;
   readonly #conversation: Conversation;
+  #mode: LuziaWidgetMode = 'bubble';
 
   constructor(root: ShadowRoot, conversation: Conversation) {
     this.#conversation = conversation;
     this.#bubble = root.querySelector('.bubble')!;
     this.#panel = root.querySelector('.panel')!;
+    this.#close = root.querySelector('.close')!;
+    this.#body = root.querySelector('.body')!;
+    this.#greeting = root.querySelector('.greeting')!;
     this.#messages = root.querySelector('.messages')!;
+    this.#suggestions = root.querySelector('.suggestions')!;
     this.#alert = root.querySelector('.alert')!;
     this.#form = root.querySelector('.composer')!;
     this.#input = this.#form.querySelector('textarea')!;
     this.#send = this.#form.querySelector('button')!;
 
     this.#bubble.addEventListener('click', () => this.#setOpen(this.#bubble.getAttribute('aria-expanded') !== 'true'));
-    root.querySelector('.close')!.addEventListener('click', () => this.#setOpen(false));
+    this.#close.addEventListener('click', () => this.#setOpen(false));
     this.#form.addEventListener('submit', (event) => {
       event.preventDefault();
       this.#submit();
@@ -98,6 +195,39 @@ class View {
 
     conversation.subscribe((state) => this.#render(state));
     this.#render(conversation.state);
+  }
+
+  /** Applies the Owner's options; called on mount and whenever one changes. */
+  configure(options: ViewOptions): void {
+    const greeting = options.greeting.trim();
+    this.#greeting.textContent = greeting;
+    this.#greeting.hidden = !greeting;
+
+    this.#suggestions.replaceChildren(
+      ...options.suggestedQuestions.map((question) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'suggestion';
+        button.textContent = question;
+        button.addEventListener('click', () => this.#conversation.send(question));
+        const item = document.createElement('li');
+        item.append(button);
+        return item;
+      }),
+    );
+    this.#render(this.#conversation.state);
+
+    if (options.mode !== this.#mode) this.#setMode(options.mode);
+  }
+
+  /** Inline: the panel is a always-open region of the page. Bubble: a dialog the bubble toggles. */
+  #setMode(mode: LuziaWidgetMode): void {
+    this.#mode = mode;
+    const inline = mode === 'inline';
+    this.#panel.setAttribute('role', inline ? 'region' : 'dialog');
+    this.#bubble.hidden = inline;
+    this.#close.hidden = inline;
+    this.#setOpen(inline);
   }
 
   #setOpen(open: boolean): void {
@@ -124,7 +254,9 @@ class View {
       if (item.textContent !== message.content) item.textContent = message.content;
     });
     while (this.#messages.children.length > state.messages.length) this.#messages.lastElementChild?.remove();
-    this.#messages.scrollTop = this.#messages.scrollHeight;
+    // Suggestions only help the Visitor start; once the conversation has begun they go away.
+    this.#suggestions.hidden = state.messages.length > 0 || this.#suggestions.children.length === 0;
+    this.#body.scrollTop = this.#body.scrollHeight;
 
     const streaming = state.status === 'streaming';
     this.#send.disabled = streaming;
