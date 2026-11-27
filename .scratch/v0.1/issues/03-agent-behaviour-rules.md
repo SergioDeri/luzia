@@ -9,6 +9,6 @@
 - [x] The prompt sent to the model encodes every rule listed above (verified at Seam 1 via the fake model)
 - [x] Instructions are presented to the model as behavioural guidance, distinct from Knowledge Base facts
 - [x] Contact details used in "I don't know" replies come from the Core
-- [ ] Manual check against a real model in the Next.js example: a question with no supporting fact gets a decline plus contact, a question in English gets an English reply from a Spanish Knowledge Base, and an off-topic request is refused
+- [x] Manual check against a real model in the Next.js example: a question with no supporting fact gets a decline plus contact, a question in English gets an English reply from a Spanish Knowledge Base, and an off-topic request is refused
 
-_Note: the manual check against a real model is not done yet (no API key was available when this ticket was implemented); it stays unticked until someone runs it._
+_Note: manual check run on 2026-11-26 with Groq `openai/gpt-oss-120b` (chat) and Gemini `gemini-embedding-001` (embeddings). It surfaced two issues, both fixed: English questions answered in Spanish when excerpts were Spanish, and the word "Owner" leaking into replies. After the fix: 9/9 language checks correct, off-topic refused, injection resisted, and the example's `luzia eval` passes 5/5._
