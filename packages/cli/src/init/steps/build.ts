@@ -22,6 +22,7 @@ export const buildStep: WizardStep = {
     const code = await buildCommand.run([], {
       cwd: context.cwd,
       env: context.projectEnv(),
+      ...(context.io.embeddingModel ? { embeddingModel: context.io.embeddingModel } : {}),
       stdout: (line) => context.say(`  ${line}`),
       stderr: (line) => context.warn(`  ${line}`),
     }).catch((error: unknown) => {

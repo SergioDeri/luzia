@@ -20,8 +20,12 @@ export const buildCommand: CliCommand = {
     const dir = path.resolve(io.cwd, values.dir);
     const out = path.resolve(io.cwd, values.out);
 
-    // Embeddings model and API key come from LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL.
-    const { knowledgeBase, report } = await buildKnowledgeBaseWithReport({ dir, env: io.env ?? process.env });
+    // Embeddings model and API key come from LUZIA_EMBEDDING_PROVIDER / LUZIA_EMBEDDING_MODEL, unless injected.
+    const { knowledgeBase, report } = await buildKnowledgeBaseWithReport({
+      dir,
+      env: io.env ?? process.env,
+      ...(io.embeddingModel ? { embedding: { model: io.embeddingModel } } : {}),
+    });
     await writeCompiledKnowledgeBase(knowledgeBase, out);
 
     const parts = [`Core (${knowledgeBase.core.source})`];

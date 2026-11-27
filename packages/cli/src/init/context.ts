@@ -55,8 +55,11 @@ export interface WizardState {
 /** A file a step wants to create or replace, relative to the project. */
 export interface FileWrite {
   path: string;
-  /** The complete new content. A file whose content would not change is left out of the plan. */
-  content: string;
+  /**
+   * The complete new content: text, or bytes for a binary file (e.g. a PDF,
+   * shown without a diff). A file whose content would not change is left out of the plan.
+   */
+  content: string | Uint8Array;
 }
 
 /** An external command a step wants to run. */
@@ -111,8 +114,16 @@ export interface WizardContext {
    * Resolves to `false` (nothing touched) when the Owner says no or there was
    * nothing to do.
    */
-  apply(plan: { files?: FileWrite[]; commands?: PlannedCommand[] }, question: string): Promise<boolean>;
+  apply(plan: { files?: FileWrite[]; commands?: PlannedCommand[] }, question: string | ApplyConfirmed): Promise<boolean>;
 }
+
+/**
+ * Passed to {@link WizardContext.apply} instead of a question when the Owner
+ * has already approved this exact change (e.g. accepted the Core shown in
+ * full): the change is still listed, then made without asking again.
+ */
+export const ALREADY_CONFIRMED = Symbol('already confirmed');
+export type ApplyConfirmed = typeof ALREADY_CONFIRMED;
 
 export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardContext {
   const secrets = new Set<string>();
@@ -152,8 +163,13 @@ export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardC
     async apply(plan, question) {
       const files: (FileWrite & { before: string | null })[] = [];
       for (const file of plan.files ?? []) {
-        const before = await readProjectFile(file.path);
-        if (before !== file.content) files.push({ ...file, before });
+        if (typeof file.content === 'string') {
+          const before = await readProjectFile(file.path);
+          if (before !== file.content) files.push({ ...file, before });
+        } else {
+          const before = existsSync(resolve(file.path)) ? await readFile(resolve(file.path)) : null;
+          if (!before?.equals(file.content)) files.push({ ...file, before: before && '' });
+        }
       }
       const commands = plan.commands ?? [];
       if (files.length === 0 && commands.length === 0) return false;
@@ -161,6 +177,8 @@ export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardC
       for (const file of files) {
         if (file.before === null) {
           context.say(`  Create ${file.path}`);
+        } else if (typeof file.content !== 'string') {
+          context.say(`  Replace ${file.path}`);
         } else {
           context.say(`  Update ${file.path}:`);
           for (const line of lineDiff(file.before, file.content)) context.say(`    ${line}`);
@@ -168,7 +186,7 @@ export function createWizardContext(io: WizardIo, project: ProjectInfo): WizardC
       }
       for (const command of commands) context.say(`  Run ${commandLine(command)}`);
 
-      if (!(await io.prompter.confirm({ message: question, initialValue: true }))) {
+      if (question !== ALREADY_CONFIRMED && !(await io.prompter.confirm({ message: question, initialValue: true }))) {
         context.say('  Left unchanged.');
         return false;
       }
