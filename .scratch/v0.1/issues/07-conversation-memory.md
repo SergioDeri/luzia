@@ -4,9 +4,9 @@
 
 **Blocked by:** 02 — Minimal widget: floating bubble with streamed replies
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Each request carries the full prior conversation; follow-up questions reach the model with earlier messages
-- [ ] Conversation is persisted in `sessionStorage` and restored when the widget remounts in the same tab
-- [ ] A "new conversation" control clears the conversation and its stored copy
-- [ ] Seam 2 tests cover persistence across remount and clearing
+- [x] Each request carries the full prior conversation; follow-up questions reach the model with earlier messages
+- [x] Conversation is persisted in `sessionStorage` and restored when the widget remounts in the same tab
+- [x] A "new conversation" control clears the conversation and its stored copy
+- [x] Seam 2 tests cover persistence across remount and clearing
