@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 — Tracer bullet: `luzia init` on Next.js with a Core from questions
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Each salary choice produces the corresponding Instructions text; the range choice includes the range given
-- [ ] Availability, relocation and free-form answers are included; skipped topics are omitted
-- [ ] The Instructions are shown before saving and written through the diff-and-confirm step
-- [ ] Seam tests cover each salary choice and the optional topics
+- [x] Each salary choice produces the corresponding Instructions text; the range choice includes the range given
+- [x] Availability, relocation and free-form answers are included; skipped topics are omitted
+- [x] The Instructions are shown before saving and written through the diff-and-confirm step
+- [x] Seam tests cover each salary choice and the optional topics
